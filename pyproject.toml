@@ -34,6 +34,30 @@ dev = [
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = [
+    "E", "W",  # stile PEP 8
+    "F",       # errori certi: nomi non definiti, import inutili
+    "I",       # ordine degli import
+    "B",       # trappole comuni (argomenti mutabili, except troppo larghi)
+    "UP",      # sintassi moderna per la versione di Python in uso
+    "SIM",     # semplificazioni
+    "BLE",     # vieta "except Exception" senza rilanciare o registrare
+    "S110",    # vieta "except: pass"
+    "S112",    # vieta "except: continue"
+    "RUF",     # regole di Ruff
+    "T20",     # vieta print(): si usa il logging
+]
+# Caratteri normali nei testi in italiano, non da segnalare come sospetti
+allowed-confusables = ["’", "–", "—"]
+
+[tool.ruff.lint.per-file-ignores]
+# Gli script da riga di comando scrivono il risultato con print()
+"scripts/**" = ["T20"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 # -ra: a fine run elenca il motivo di ogni test saltato o fallito

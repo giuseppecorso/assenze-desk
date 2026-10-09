@@ -50,9 +50,7 @@ def violazioni(sorgente: str, nome_file: str = "<test>") -> list[str]:
         else:
             moduli = []
         trovate += [
-            f"{nome_file}:{nodo.lineno}: import di {m}"
-            for m in moduli
-            if _libreria_vietata(m)
+            f"{nome_file}:{nodo.lineno}: import di {m}" for m in moduli if _libreria_vietata(m)
         ]
 
         if isinstance(nodo, ast.Call) and _legge_o_scrive_file(nodo.func):
@@ -107,12 +105,7 @@ def test_trova_gli_import_vietati():
 
 
 def test_trova_la_lettura_e_la_scrittura_di_file():
-    sorgente = (
-        "open('a.txt')\n"
-        "io.open('b.txt')\n"
-        "percorso.read_text()\n"
-        "percorso.write_bytes(b'')\n"
-    )
+    sorgente = "open('a.txt')\nio.open('b.txt')\npercorso.read_text()\npercorso.write_bytes(b'')\n"
     assert violazioni(sorgente) == [
         "<test>:1: chiamata a open()",
         "<test>:2: chiamata a open()",
