@@ -60,5 +60,7 @@ allowed-confusables = ["’", "–", "—"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# Gli script in scripts/ non fanno parte del pacchetto: i test li importano da lì
+pythonpath = ["scripts"]
 # -ra: a fine run elenca il motivo di ogni test saltato o fallito
 addopts = "-ra"

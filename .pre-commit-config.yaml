@@ -1,6 +1,8 @@
 # Controlli automatici a ogni commit. Installazione (una volta): pre-commit install
 # Prova su tutti i file: pre-commit run --all-files
 default_install_hook_types: [pre-commit, commit-msg]
+# Gli hook girano sui file; sul messaggio di commit solo il controllo privacy
+default_stages: [pre-commit]
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -21,3 +23,16 @@ repos:
       - id: ruff-check
         args: [--fix]
       - id: ruff-format
+
+  # Controllo privacy con la denylist locale (vedi scripts/check_privacy.py)
+  - repo: local
+    hooks:
+      - id: privacy
+        name: controllo privacy dei file
+        language: python
+        entry: python scripts/check_privacy.py
+      - id: privacy-messaggio
+        name: controllo privacy del messaggio di commit
+        language: python
+        entry: python scripts/check_privacy.py --commit-msg
+        stages: [commit-msg]
