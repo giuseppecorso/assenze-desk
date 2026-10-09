@@ -1,0 +1,73 @@
+# =====================================================================
+# PRIVACY: questi file non devono mai entrare nel repo
+# =====================================================================
+# Elenco locale dei termini vietati (letto dal controllo pre-commit)
+.privacy-denylist*
+
+# Versione vecchia di riferimento e sua configurazione (residui reali)
+gestione_malattie_*.py
+Malattie_Config*
+
+# Dati veri: fogli Excel, mail salvate, certificati, esportazioni
+*.xlsm
+*.xlsx
+*.xls
+*.csv
+*.pdf
+*.msg
+*.eml
+*.pst
+*.ost
+
+# Database e log dell'app
+*.db
+*.sqlite
+*.sqlite3
+*.log
+*.log.*
+
+# Cartelle di dati e risultati generati
+dati/
+data/
+logs/
+output/
+export/
+demo/output/
+
+# Impostazioni locali (percorsi e valori del tuo PC)
+*.local.*
+.env
+
+# =====================================================================
+# Ambiente Python e strumenti
+# =====================================================================
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+
+# =====================================================================
+# Editor e sistema operativo
+# =====================================================================
+# VS Code: si salvano solo le impostazioni condivise del progetto
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea/
+Thumbs.db
+desktop.ini
+.DS_Store
+~$*
+*.tmp
+*.bak
+*.orig

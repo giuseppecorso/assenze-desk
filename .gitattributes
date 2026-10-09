@@ -1,0 +1,14 @@
+# Fine riga uguale per tutti (LF), su Windows come su Linux e nella CI
+* text=auto eol=lf
+
+# Script di Windows: richiedono CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# File binari: mai convertire
+*.png binary
+*.jpg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.xlsx binary
