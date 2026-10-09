@@ -1,6 +1,6 @@
 # Assenze Desk
 
-![CI](https://github.com/giuseppecorso/assenze-desk/actions/workflows/ci.yml/badge.svg)
+[![CI](https://github.com/giuseppecorso/assenze-desk/actions/workflows/ci.yml/badge.svg)](https://github.com/giuseppecorso/assenze-desk/actions/workflows/ci.yml)
 
 Gestione di malattie e giustificativi a partire dalle mail: estrazione dei dati con regole testate, bozze di risposta, archivio locale.
 
