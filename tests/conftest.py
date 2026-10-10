@@ -13,11 +13,13 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 def distruggi():
     """Distrugge davvero i widget a fine test: quelli rimasti in vita rallentano
     ogni cambio di tema dei test successivi."""
+    import shiboken6
     from PySide6.QtCore import QCoreApplication, QEvent
 
     widget = []
     yield widget.append
     for elemento in widget:
-        elemento.close()
-        elemento.deleteLater()
+        if shiboken6.isValid(elemento):  # alcuni si distruggono da soli alla chiusura
+            elemento.close()
+            elemento.deleteLater()
     QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
