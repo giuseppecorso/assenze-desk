@@ -12,8 +12,10 @@ from assenze_desk.config import (
     carica_impostazioni,
     cartella_dati_predefinita,
     impostazioni_predefinite,
+    regole_analisi,
     salva_impostazioni,
 )
+from assenze_desk.core.analisi import RegoleAnalisi
 from assenze_desk.core.giustificativi import TIPI_PREDEFINITI, TipoGiustificativo
 from assenze_desk.core.identificativi import JOBORDER, PROTOCOLLO, RegolaNumero
 from assenze_desk.core.vocabolario import VOCABOLARIO
@@ -154,6 +156,18 @@ def test_voci_dell_interfaccia(tmp_path, cartella):
     assert imp.cartelle_outlook == CartelleOutlook("Gestite/Malattie", "")
     salva_impostazioni(imp, file)
     assert carica_impostazioni(file, cartella) == (imp, [])
+
+
+def test_regole_per_l_analisi(tmp_path, cartella):
+    file = scrivi(tmp_path, {"giorni_avanti_permessi": 30, "protocollo": {"lunghezza": 10}})
+    imp, _ = carica_impostazioni(file, cartella)
+    assert regole_analisi(imp) == RegoleAnalisi(
+        protocollo=imp.protocollo,
+        joborder=imp.joborder,
+        tipi=imp.tipi,
+        vocabolario=imp.vocabolario,
+        giorni_avanti=30,
+    )
 
 
 def test_voce_sconosciuta_avviso(tmp_path, cartella):

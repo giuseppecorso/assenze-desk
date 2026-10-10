@@ -73,7 +73,8 @@ def test_ferie_a_giornata_e_weekend_da_decidere():
     assert permesso.giorni_weekend == (date(2026, 10, 17), date(2026, 10, 18))
     # Giornate intere: le ore di ogni giorno vengono dall'orario del cliente (righe)
     assert permesso.minuti is None
-    assert campi_segnalati(permesso) == ["giorni"]
+    # Il weekend ha una sua segnalazione: i giorni chiesti non sono incerti (D48)
+    assert campi_segnalati(permesso) == ["weekend"]
     assert "sabato o domenica" in permesso.segnalazioni[0].messaggio
 
 

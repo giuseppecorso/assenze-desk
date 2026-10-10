@@ -10,7 +10,8 @@ Regole:
 - per i tipi "a giornata" (Ferie) senza ore scritte le ore restano vuote senza
   segnalazione: le righe le prendono dall'orario del cliente, giorno per giorno;
 - ogni dubbio diventa una segnalazione sul campo (tipo, giorni, ore), che
-  l'interfaccia evidenzia: meglio vuoto che sbagliato.
+  l'interfaccia evidenzia: meglio vuoto che sbagliato. Il weekend nei periodi ha
+  una segnalazione a parte: lo decide l'utente con un interruttore (D48).
 """
 
 from collections.abc import Sequence
@@ -35,7 +36,7 @@ from assenze_desk.core.vocabolario import VOCABOLARIO, Vocabolario
 
 @dataclass(frozen=True)
 class Segnalazione:
-    campo: Literal["tipo", "giorni", "ore"]
+    campo: Literal["tipo", "giorni", "weekend", "ore"]
     messaggio: str
 
 
@@ -81,7 +82,7 @@ def leggi_permesso(
     if weekend:
         segnalazioni.append(
             Segnalazione(
-                "giorni",
+                "weekend",
                 f"Il periodo comprende {len(weekend)} giorni di sabato o domenica: "
                 "decidi se includerli.",
             )

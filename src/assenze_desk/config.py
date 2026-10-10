@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any
 
 from assenze_desk.adapters.inps import URL_PORTALE_INPS
+from assenze_desk.core.analisi import RegoleAnalisi
 from assenze_desk.core.giustificativi import TIPI_PREDEFINITI, TipoGiustificativo
 from assenze_desk.core.identificativi import JOBORDER, PROTOCOLLO, RegolaNumero
 from assenze_desk.core.vocabolario import VOCABOLARIO, Vocabolario
@@ -159,6 +160,16 @@ def carica_impostazioni(file: Path, cartella_dati: Path) -> tuple[Impostazioni, 
             raise ValueError(f"impostazioni non valide alla voce '{voce}': {errore}") from None
         valori[campo] = convertito
     return replace(predefinite, **valori), avvisi
+
+
+def regole_analisi(impostazioni: Impostazioni) -> RegoleAnalisi:
+    return RegoleAnalisi(
+        protocollo=impostazioni.protocollo,
+        joborder=impostazioni.joborder,
+        tipi=impostazioni.tipi,
+        vocabolario=impostazioni.vocabolario,
+        giorni_avanti=impostazioni.giorni_avanti_permessi,
+    )
 
 
 def salva_impostazioni(impostazioni: Impostazioni, file: Path) -> None:
