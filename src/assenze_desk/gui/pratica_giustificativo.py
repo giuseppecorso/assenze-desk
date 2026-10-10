@@ -214,6 +214,10 @@ class PraticaGiustificativo(QWidget):
 
     # --- Mostra ---
 
+    def aggiorna(self) -> None:
+        """Ridisegna dopo un cambio di impostazioni (tipi, orari, posta)."""
+        self._ridisegna()
+
     def _ridisegna(self) -> None:
         self.campi["tipo"].imposta_scelte(self._nomi_tipi())
         for nome, widget in self.campi.items():

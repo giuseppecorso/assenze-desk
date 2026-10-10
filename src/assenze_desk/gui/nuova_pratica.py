@@ -252,6 +252,11 @@ class NuovaPratica(QWidget):
         self.segmenti.seleziona(indice)
         self._cambia_flusso(indice)
 
+    def impostazioni_cambiate(self) -> None:
+        self.mail.importa.setEnabled(self.contesto.outlook_disponibile)
+        self.malattia.aggiorna()
+        self.giustificativo.aggiorna()
+
     def nuova_vuota(self) -> None:
         self.info = InfoMail()
         self.mail.imposta_testo("")

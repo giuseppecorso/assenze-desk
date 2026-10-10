@@ -26,11 +26,15 @@ from PySide6.QtWidgets import (
 )
 
 from assenze_desk.gui import icone, tema
+from assenze_desk.gui.archivio import Archivio
 from assenze_desk.gui.componenti import BarraMessaggi, Segmenti, etichetta
 from assenze_desk.gui.errori import esegui
+from assenze_desk.gui.impostazioni import SezioneImpostazioni
 from assenze_desk.gui.nuova_pratica import NuovaPratica
 from assenze_desk.gui.pannello_log import PannelloLog
+from assenze_desk.gui.statistiche import Statistiche
 from assenze_desk.servizi import Contesto
+from assenze_desk.storage.archivio import Pratica
 
 log = logging.getLogger(__name__)
 
@@ -69,10 +73,15 @@ class FinestraPrincipale(QMainWindow):
 
         self.sezioni = QStackedWidget()
         self.nuova_pratica = NuovaPratica(contesto, self.messaggi)
-        self.sezioni.addWidget(self.nuova_pratica)
-        for titolo, _icona in SEZIONI[1:]:
-            self.sezioni.addWidget(_in_arrivo(titolo))
+        self.archivio = Archivio(contesto, self.messaggi)
+        self.statistiche = Statistiche(contesto)
+        self.impostazioni = SezioneImpostazioni(contesto, self.messaggi)
+        for sezione in (self.nuova_pratica, self.archivio, self.statistiche, self.impostazioni):
+            self.sezioni.addWidget(sezione)
         area.addWidget(self.sezioni, 1)
+        self.nuova_pratica.archivio_cambiato.connect(self.archivio.aggiorna)
+        self.archivio.apri_pratica.connect(self._riapri_pratica)
+        self.impostazioni.salvate.connect(self._impostazioni_salvate)
 
         self.log = PannelloLog()
         self.log.collega()
@@ -137,8 +146,21 @@ class FinestraPrincipale(QMainWindow):
         return laterale
 
     def mostra_sezione(self, indice: int) -> None:
+        """Cambio di sezione: solo da un clic dell'utente."""
         self.voci[indice].setChecked(True)
+        if self.sezioni.widget(indice) is self.archivio:
+            self.archivio.aggiorna()
+        elif self.sezioni.widget(indice) is self.statistiche:
+            self.statistiche.aggiorna()
         self.sezioni.setCurrentIndex(indice)
+
+    def _riapri_pratica(self, pratica: Pratica) -> None:
+        self.nuova_pratica.carica_pratica(pratica)
+        self.mostra_sezione(0)
+
+    def _impostazioni_salvate(self) -> None:
+        self.applica_tema(self.contesto.impostazioni.tema)
+        self.nuova_pratica.impostazioni_cambiate()
 
     # --- Tema ---
 
@@ -152,6 +174,7 @@ class FinestraPrincipale(QMainWindow):
         self.applica_tema(scelta)
         nuove = replace(self.contesto.impostazioni, tema=scelta)
         esegui(self.messaggi, lambda: self.contesto.salva_impostazioni(nuove))
+        self.impostazioni.mostra_tema(scelta)
 
     # --- Errori e chiusura ---
 
@@ -164,13 +187,3 @@ class FinestraPrincipale(QMainWindow):
     def closeEvent(self, evento: QCloseEvent) -> None:
         self.log.scollega()
         super().closeEvent(evento)
-
-
-def _in_arrivo(titolo: str) -> QWidget:
-    pagina = QWidget()
-    layout = QVBoxLayout(pagina)
-    layout.setContentsMargins(24, 16, 24, 16)
-    layout.addWidget(etichetta(titolo, "titolo"))
-    layout.addWidget(etichetta("Sezione in costruzione.", "secondario"))
-    layout.addStretch(1)
-    return pagina

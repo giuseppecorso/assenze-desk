@@ -432,6 +432,10 @@ class PraticaMalattia(QWidget):
         certificato = Certificato(str(v["protocollo"]), str(v["cf"]), v["inizio"], v["fine"])
         return self.contesto.episodio(certificato)
 
+    def aggiorna(self) -> None:
+        """Ridisegna dopo un cambio di impostazioni (soglia, posta, cartelle)."""
+        self._ridisegna()
+
     def _ridisegna(self) -> None:
         for nome, widget in self.campi.items():
             widget.mostra(self.modulo[nome])

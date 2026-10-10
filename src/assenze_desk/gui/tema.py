@@ -189,6 +189,13 @@ QHeaderView::section {
     padding: 6px 8px; font-weight: 600; font-size: 9pt;
 }
 QTableCornerButton::section { background: transparent; border: none; }
+QTableWidget::indicator, QCheckBox::indicator {
+    width: 14px; height: 14px; border: 1px solid $testo_2; border-radius: 4px;
+    background: $superficie;
+}
+QTableWidget::indicator:checked, QCheckBox::indicator:checked {
+    background: $accento; border-color: $accento;
+}
 
 QScrollBar:vertical { background: transparent; width: 10px; margin: 0; }
 QScrollBar:horizontal { background: transparent; height: 10px; margin: 0; }
