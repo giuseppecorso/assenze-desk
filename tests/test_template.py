@@ -6,7 +6,7 @@ i dati inseriti, in HTML, sono sempre trattati come testo.
 
 import pytest
 
-from assenze_desk.core.template import compila, segnaposti
+from assenze_desk.core.template import compila, compila_per_outlook, html_in_testo, segnaposti
 
 
 def test_sostituisce_i_segnaposti():
@@ -68,6 +68,36 @@ def test_solo_maiuscole_sono_segnaposti():
     risultato = compila("{nome} e {Nome} e { NOME }", {})
     assert risultato.testo == "{nome} e {Nome} e { NOME }"
     assert risultato.mancanti == ()
+
+
+# --- Corpo HTML per Outlook e testo semplice per mailto ---
+
+
+def test_template_semplice_diventa_html():
+    risultato = compila_per_outlook(
+        "Gentile {NOME},\nprot. {PROT} & co.", {"NOME": "A<b>", "PROT": "4"}
+    )
+    assert risultato.testo == "Gentile A&lt;b&gt;,<br>\nprot. 4 &amp; co."
+
+
+def test_template_gia_html_resta_com_e():
+    risultato = compila_per_outlook("<p>Gentile <b>{NOME}</b></p>", {"NOME": "Anna & Co"})
+    assert risultato.testo == "<p>Gentile <b>Anna &amp; Co</b></p>"
+    assert compila_per_outlook("<p>{NOME}</p>", {}).mancanti == ("NOME",)
+
+
+@pytest.mark.parametrize(
+    ("html", "testo"),
+    [
+        ("Gentile Anna,<br>grazie.<br/><br />Saluti", "Gentile Anna,\ngrazie.\n\nSaluti"),
+        ("<p>Primo</p><p>Secondo</p>", "Primo\n\nSecondo"),
+        ("<b>Prot.</b> 4 &amp; co &lt;x&gt;", "Prot. 4 & co <x>"),
+        ("<style>p { color: red }</style>Testo", "Testo"),
+        ("  riga  \n\n\n\naltra", "riga\n\naltra"),
+    ],
+)
+def test_html_in_testo_semplice(html, testo):
+    assert html_in_testo(html) == testo
 
 
 def test_elenco_dei_segnaposti():

@@ -13,7 +13,7 @@
 import re
 from collections.abc import Mapping
 from dataclasses import dataclass
-from html import escape
+from html import escape, unescape
 
 _SEGNAPOSTO = re.compile(r"\{([A-Z][A-Z0-9_]*)\}")
 
@@ -45,6 +45,28 @@ def compila(
 
     testo = _SEGNAPOSTO.sub(sostituisci, template)
     return TemplateCompilato(testo, tuple(mancanti))
+
+
+_TAG = re.compile(r"<[a-zA-Z/!][^>]*>")
+
+
+def compila_per_outlook(template: str, valori: Mapping[str, str | None]) -> TemplateCompilato:
+    """Corpo HTML per Outlook. Un template in testo semplice viene protetto e i suoi
+    a capo diventano <br>; un template già in HTML resta com'è."""
+    if not _TAG.search(template):
+        righe = template.replace("\r\n", "\n").split("\n")
+        template = "<br>\n".join(escape(riga, quote=False) for riga in righe)
+    return compila(template, valori, html=True)
+
+
+def html_in_testo(html: str) -> str:
+    """Testo semplice da un corpo HTML (per le bozze mailto, che non accettano HTML)."""
+    testo = re.sub(r"(?is)<(style|script)\b.*?</\1\s*>", "", html)
+    testo = re.sub(r"(?i)<br\s*/?>", "\n", testo)
+    testo = re.sub(r"(?i)</p\s*>", "\n\n", testo)
+    testo = unescape(_TAG.sub("", testo))
+    testo = "\n".join(riga.strip() for riga in testo.split("\n"))
+    return re.sub(r"\n{3,}", "\n\n", testo).strip()
 
 
 def _in_html(valore: str) -> str:
