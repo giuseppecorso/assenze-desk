@@ -7,6 +7,7 @@ sono della issue #15.
 import pytest
 
 from assenze_desk.core.ore import leggi_durata, trova_durate
+from assenze_desk.core.vocabolario import VOCABOLARIO
 
 
 @pytest.mark.parametrize(
@@ -74,6 +75,12 @@ def test_piu_durate_in_ordine():
 
 def test_piu_durate_diverse_sceglie_l_utente():
     assert leggi_durata("oggi 2 ore e domani 1 ora e mezza") is None
+
+
+def test_unita_aggiunte_dalle_impostazioni():
+    esteso = VOCABOLARIO.estendi(unita_ore=["hr"], unita_minuti=["mn"])
+    assert trova_durate("2 hr e 15 mn") == []
+    assert trova_durate("2 hr e 15 mn", esteso) == [135]
 
 
 def test_stessa_durata_ripetuta():
