@@ -3,8 +3,9 @@
 Regole (D32): tipo, giorni e ore si cercano in oggetto e corpo, non nelle
 intestazioni; le ore scritte (durate, fasce, orari spostati) vincono su
 mattina/pomeriggio, che sono solo proposte dal turno; per i tipi "a giornata"
-(Ferie) senza ore scritte valgono le ore del turno; ogni dubbio diventa una
-segnalazione sul campo interessato e il campo resta vuoto.
+(Ferie) senza ore scritte le ore restano vuote senza segnalazione, perché le righe
+le prendono dall'orario del cliente (D38); ogni dubbio diventa una segnalazione
+sul campo interessato e il campo resta vuoto.
 """
 
 from datetime import date, time
@@ -65,20 +66,21 @@ def test_ore_scritte_vincono_sulla_mattina():
     assert permesso.segnalazioni == ()
 
 
-def test_ferie_a_giornata_con_le_ore_del_turno_e_weekend_da_decidere():
+def test_ferie_a_giornata_e_weekend_da_decidere():
     permesso = leggi("Vorrei chiedere le ferie dal 12/10 al 18/10")
     assert permesso.tipo.nome == "Ferie"
     assert permesso.giorni == tuple(date(2026, 10, d) for d in range(12, 17))
     assert permesso.giorni_weekend == (date(2026, 10, 17), date(2026, 10, 18))
-    assert permesso.minuti == 480  # giornata intera del turno, senza conferma
+    # Giornate intere: le ore di ogni giorno vengono dall'orario del cliente (righe)
+    assert permesso.minuti is None
     assert campi_segnalati(permesso) == ["giorni"]
     assert "sabato o domenica" in permesso.segnalazioni[0].messaggio
 
 
-def test_ferie_senza_turno():
+def test_ferie_senza_turno_nessuna_segnalazione_sulle_ore():
     permesso = leggi("ferie domani", turno=None)
     assert permesso.minuti is None
-    assert campi_segnalati(permesso) == ["ore"]
+    assert permesso.segnalazioni == ()
 
 
 def test_mezza_giornata_di_ferie():

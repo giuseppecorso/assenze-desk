@@ -4,12 +4,12 @@
 la proposta va confermata dall'utente. Senza turno non si propone niente.
 """
 
-from datetime import time
+from datetime import date, time
 
 import pytest
 
 from assenze_desk.core.orari import Intervallo
-from assenze_desk.core.turni import Turno, minuti_parte, trova_parti_giornata
+from assenze_desk.core.turni import OrarioSettimanale, Turno, minuti_parte, trova_parti_giornata
 from assenze_desk.core.vocabolario import VOCABOLARIO
 
 TURNO = Turno(mattina=Intervallo(time(9), time(13)), pomeriggio=Intervallo(time(14), time(18)))
@@ -70,6 +70,27 @@ def test_turno_solo_di_mattina():
 
 def test_senza_turno_nessuna_proposta():
     assert minuti_parte("mattina", None) is None
+
+
+# --- Orario settimanale: minuti di lavoro per giorno della settimana ---
+
+
+def test_orario_settimanale_dal_turno():
+    orario = OrarioSettimanale.da_turno(TURNO)  # da lunedì a venerdì
+    assert orario.minuti == (480, 480, 480, 480, 480, 0, 0)
+    assert orario.minuti_del_giorno(date(2026, 10, 12)) == 480  # lunedì
+    assert orario.minuti_del_giorno(date(2026, 10, 17)) is None  # sabato: non lavorativo
+
+
+def test_orario_settimanale_con_sabato_ridotto():
+    orario = OrarioSettimanale((480, 480, 480, 480, 480, 240, 0))
+    assert orario.minuti_del_giorno(date(2026, 10, 17)) == 240
+
+
+@pytest.mark.parametrize("minuti", [(480,) * 6, (480, 480, 480, 480, 480, -1, 0), (1500,) * 7])
+def test_orario_settimanale_non_valido(minuti):
+    with pytest.raises(ValueError):
+        OrarioSettimanale(minuti)
 
 
 @pytest.mark.parametrize(

@@ -7,7 +7,8 @@ Regole:
 - si legge solo oggetto e corpo: le date delle intestazioni sono quelle della mail;
 - le ore scritte vincono su mattina/pomeriggio, che sono proposte dal turno da
   confermare; se le ore scritte non concordano tra loro, il campo resta vuoto;
-- per i tipi "a giornata" (Ferie) senza ore scritte valgono le ore del turno;
+- per i tipi "a giornata" (Ferie) senza ore scritte le ore restano vuote senza
+  segnalazione: le righe le prendono dall'orario del cliente, giorno per giorno;
 - ogni dubbio diventa una segnalazione sul campo (tipo, giorni, ore), che
   l'interfaccia evidenzia: meglio vuoto che sbagliato.
 """
@@ -146,6 +147,5 @@ def _minuti(
         return minuti, f"Ore proposte dal turno ({parti[0]}): da confermare."
 
     if tipo and tipo.a_giornata:
-        minuti = minuti_parte("giornata", turno)
-        return minuti, None if minuti else "Turno non disponibile: inserisci le ore."
+        return None, None  # giornate intere: le ore di ogni giorno vengono dall'orario (righe)
     return None, "Ore non trovate: inseriscile."

@@ -6,7 +6,9 @@ non ha quella parte, non si propone niente.
 """
 
 import re
+from collections.abc import Sequence
 from dataclasses import dataclass
+from datetime import date
 from functools import cache
 from typing import Literal, cast
 
@@ -32,6 +34,28 @@ class Turno:
             raise ValueError("ogni parte del turno deve finire dopo l'inizio")
         if self.mattina and self.pomeriggio and self.mattina.fine > self.pomeriggio.inizio:
             raise ValueError("la mattina deve finire prima che inizi il pomeriggio")
+
+
+@dataclass(frozen=True)
+class OrarioSettimanale:
+    """Minuti di lavoro del cliente per ogni giorno, da lunedì a domenica (0 = non lavora)."""
+
+    minuti: tuple[int, ...]  # 7 valori, controllati qui sotto
+
+    def __post_init__(self) -> None:
+        if len(self.minuti) != 7 or any(not 0 <= m <= 24 * 60 for m in self.minuti):
+            raise ValueError("servono 7 valori, da 0 a 1440 minuti")
+
+    @classmethod
+    def da_turno(
+        cls, turno: Turno, giorni_lavorativi: Sequence[int] = range(5)
+    ) -> OrarioSettimanale:
+        """Lo stesso turno nei giorni lavorativi (di default da lunedì a venerdì)."""
+        giornata = minuti_parte("giornata", turno) or 0
+        return cls(tuple(giornata if g in giorni_lavorativi else 0 for g in range(7)))
+
+    def minuti_del_giorno(self, giorno: date) -> int | None:
+        return self.minuti[giorno.weekday()] or None
 
 
 def trova_parti_giornata(testo: str, vocabolario: Vocabolario = VOCABOLARIO) -> list[Parte]:

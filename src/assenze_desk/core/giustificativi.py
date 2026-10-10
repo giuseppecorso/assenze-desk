@@ -11,8 +11,10 @@ tipo il riconoscimento è riuscito; con nessuno o più di uno sceglie l'utente.
 import re
 from collections.abc import Sequence
 from dataclasses import dataclass
+from datetime import date
 
 from assenze_desk.core.testo import normalizza
+from assenze_desk.core.turni import OrarioSettimanale
 
 
 @dataclass(frozen=True)
@@ -78,6 +80,48 @@ TIPI_PREDEFINITI = (
         ),
     ),
 )
+
+
+@dataclass(frozen=True)
+class RigaGiustificativo:
+    """Una riga per giorno, come si esporta verso il gestionale."""
+
+    giorno: date
+    tipo: str
+    codice: str
+    minuti: int | None  # None = da compilare a mano
+
+    @property
+    def ore(self) -> float | None:
+        return self.minuti / 60 if self.minuti is not None else None
+
+
+def righe_giustificativo(
+    tipo: TipoGiustificativo,
+    giorni: Sequence[date],
+    minuti: int | None,
+    orario: OrarioSettimanale | None,
+) -> list[RigaGiustificativo]:
+    """Ore scritte (o proposte e confermate) uguali per ogni giorno; senza ore, per i
+    tipi a giornata valgono le ore dell'orario del cliente in quel giorno."""
+    righe = []
+    for giorno in giorni:
+        minuti_giorno = minuti
+        if minuti_giorno is None and tipo.a_giornata and orario:
+            minuti_giorno = orario.minuti_del_giorno(giorno)
+        righe.append(RigaGiustificativo(giorno, tipo.nome, tipo.codice, minuti_giorno))
+    return righe
+
+
+def eccedenza_capienza(
+    righe: Sequence[RigaGiustificativo], capienza_minuti: int | None
+) -> int | None:
+    """Minuti oltre la capienza residua (0 se ci sta); None se la capienza non è nota.
+    Le righe ancora da compilare non contano."""
+    if capienza_minuti is None:
+        return None
+    richiesti = sum(riga.minuti for riga in righe if riga.minuti is not None)
+    return max(0, richiesti - capienza_minuti)
 
 
 def classifica_giustificativo(
