@@ -30,6 +30,9 @@ class Vocabolario:
         "al posto",
         "e non",
     )
+    # Periodi: "dal 12/10 al 16/10", "da lunedì a venerdì", "dall'8 all'11"
+    inizio_periodo: tuple[str, ...] = ("dal", "da", "dall'")
+    fine_periodo: tuple[str, ...] = ("al", "a", "fino al", "fino a", "all'", "fino all'")
     # Giorni relativi alla data della mail
     oggi: tuple[str, ...] = ("oggi", "stamattina", "stamani", "stamane", "stasera")
     domani: tuple[str, ...] = ("domani", "domattina")

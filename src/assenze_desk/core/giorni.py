@@ -48,7 +48,7 @@ def _giorno(corrispondenza: re.Match[str], testo: str, riferimento: date) -> dat
     if numero and _SEGUE_UN_MESE.match(testo, corrispondenza.end()):
         return None
     if corrispondenza["solo_numero"]:
-        return _prossimo_giorno_del_mese(int(numero), riferimento)
+        return prossimo_giorno_del_mese(int(numero), riferimento)
 
     settimana = GIORNI_SETTIMANA.index(corrispondenza["settimana"])
     if numero:
@@ -66,7 +66,8 @@ def _prossimo_con_numero(settimana: int, numero: int, riferimento: date) -> date
     return None
 
 
-def _prossimo_giorno_del_mese(numero: int, riferimento: date) -> date | None:
+def prossimo_giorno_del_mese(numero: int, riferimento: date) -> date | None:
+    """Il primo giorno con quel numero, dal riferimento compreso ("il 13", "il 31")."""
     anno, mese = riferimento.year, riferimento.month
     for _ in range(13):
         try:
