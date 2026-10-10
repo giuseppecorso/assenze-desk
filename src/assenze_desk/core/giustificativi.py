@@ -20,6 +20,8 @@ class TipoGiustificativo:
     nome: str
     codice: str
     parole_chiave: tuple[str, ...] = ()
+    # Si conta a giornate: senza ore scritte valgono le ore del turno (es. Ferie)
+    a_giornata: bool = False
 
     def __post_init__(self) -> None:
         if not self.nome.strip() or not self.codice.strip():
@@ -36,6 +38,7 @@ TIPI_PREDEFINITI = (
         "Ferie",
         "FER",
         ("ferie", "giorno di ferie", "chiedo ferie", "vorrei ferie", "assenza per ferie"),
+        a_giornata=True,
     ),
     TipoGiustificativo(
         "ROL",

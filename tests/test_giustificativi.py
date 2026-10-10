@@ -20,10 +20,10 @@ def nomi(testo, tipi=TIPI_PREDEFINITI):
 
 
 def test_tipi_predefiniti_con_codici_di_esempio():
-    assert [(t.nome, t.codice) for t in TIPI_PREDEFINITI] == [
-        ("Ferie", "FER"),
-        ("ROL", "ROL"),
-        ("Permesso visita medica", "PVM"),
+    assert [(t.nome, t.codice, t.a_giornata) for t in TIPI_PREDEFINITI] == [
+        ("Ferie", "FER", True),  # si conta a giornate, con le ore del turno
+        ("ROL", "ROL", False),
+        ("Permesso visita medica", "PVM", False),
     ]
 
 

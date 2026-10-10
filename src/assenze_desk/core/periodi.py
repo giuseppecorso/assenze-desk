@@ -80,6 +80,15 @@ def trova_periodi(
     return periodi
 
 
+def togli_periodi(testo: str, vocabolario: Vocabolario = VOCABOLARIO) -> str:
+    """Il testo (senza accenti) con i periodi coperti da spazi.
+
+    Serve a non rileggere gli estremi come giorni singoli: in "da lunedì a venerdì"
+    il venerdì non è quello di questa settimana.
+    """
+    return _regex(vocabolario).sub(lambda c: " " * len(c.group()), senza_accenti(testo))
+
+
 def _estremo(
     scritto: str, riferimento: date, vocabolario: Vocabolario, giorni_avanti: int
 ) -> date | int | None:

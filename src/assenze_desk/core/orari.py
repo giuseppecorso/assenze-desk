@@ -44,6 +44,14 @@ def trova_intervalli(testo: str, vocabolario: Vocabolario = VOCABOLARIO) -> list
     return trovati
 
 
+def togli_intervalli(testo: str, vocabolario: Vocabolario = VOCABOLARIO) -> str:
+    """Il testo (senza accenti) con fasce e orari spostati coperti da spazi.
+
+    Serve a non rileggere i loro numeri come durate: "dalle 9h alle 11h" non è "9h".
+    """
+    return _regex(vocabolario).sub(lambda c: " " * len(c.group()), senza_accenti(testo))
+
+
 def _orario(corrispondenza: re.Match[str], nome: str) -> time:
     return time(int(corrispondenza[f"{nome}_ora"]), int(corrispondenza[f"{nome}_min"] or 0))
 
