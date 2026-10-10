@@ -29,7 +29,8 @@ _MESI = {
     "nov": 11,
     "dic": 12,
 }
-_NOME_MESE = (
+# Regex dei nomi dei mesi, interi o abbreviati (usata anche da giorni.py)
+NOME_MESE = (
     r"gen(?:naio)?|feb(?:braio)?|mar(?:zo)?|apr(?:ile)?|mag(?:gio)?|giu(?:gno)?"
     r"|lug(?:lio)?|ago(?:sto)?|set(?:t(?:embre)?)?|ott(?:obre)?|nov(?:embre)?|dic(?:embre)?"
 )
@@ -46,7 +47,7 @@ _DATA = re.compile(
         (?:(?P=sep)(?P<anno>(?:19|20)?[0-9]{{2}}))?
       |
         # Mese in lettere: 5 gennaio 2026, 1° marzo, 5 gen. 2026
-        (?P<giorno_l>[0-3]?[0-9])[°º]?\s+(?P<mese_l>{_NOME_MESE})\b\.?
+        (?P<giorno_l>[0-3]?[0-9])[°º]?\s+(?P<mese_l>{NOME_MESE})\b\.?
         (?:\s+(?P<anno_l>(?:19|20)[0-9]{{2}})\b)?
     )
     (?![0-9]|[/.-][0-9])

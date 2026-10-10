@@ -30,6 +30,11 @@ class Vocabolario:
         "al posto",
         "e non",
     )
+    # Giorni relativi alla data della mail
+    oggi: tuple[str, ...] = ("oggi", "stamattina", "stamani", "stamane", "stasera")
+    domani: tuple[str, ...] = ("domani", "domattina")
+    dopodomani: tuple[str, ...] = ("dopodomani",)
+    ieri: tuple[str, ...] = ("ieri",)
 
     def __post_init__(self) -> None:
         for campo in fields(self):
