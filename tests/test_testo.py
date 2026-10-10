@@ -2,7 +2,13 @@
 
 import pytest
 
-from assenze_desk.core.testo import normalizza
+from assenze_desk.core.testo import normalizza, senza_accenti
+
+
+def test_senza_accenti_tiene_la_punteggiatura():
+    assert (
+        senza_accenti("Entrerò PIÙ tardi: 2,5 ore, un’ora") == "entrero piu tardi: 2,5 ore, un'ora"
+    )
 
 
 @pytest.mark.parametrize(
