@@ -127,6 +127,12 @@ def test_tempo_medio_nel_riepilogo():
     assert riepilogo(PRATICHE).tempo.media_sec == 660  # 6000 scartato
 
 
+def test_riepilogo_con_soglie_delle_impostazioni():
+    r = riepilogo(PRATICHE, soglia_ufficio=5, minuti_oltre_la_media=100)
+    assert r.episodi_lunghi == 0  # 5 giorni non superano la soglia di 5
+    assert r.tempo.media_sec == 2440  # con 100 minuti di margine nessun valore è anomalo
+
+
 def test_riepilogo_vuoto():
     r = riepilogo([])
     assert (r.pratiche, r.giorni, r.media_giorni_per_pratica, r.percentuale_episodi_lunghi) == (

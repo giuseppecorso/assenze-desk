@@ -34,14 +34,19 @@ def configura_log(
     cartella.mkdir(parents=True, exist_ok=True)
     file = cartella / NOME_FILE
 
+    chiudi_log()
     registro = logging.getLogger("assenze_desk")
-    for gestore in list(registro.handlers):
-        if isinstance(gestore, GestoreFileApp):
-            registro.removeHandler(gestore)
-            gestore.close()
-
     gestore = GestoreFileApp(file, maxBytes=massimo_byte, backupCount=copie, encoding="utf-8")
     gestore.setFormatter(FormatterRiservato(FORMATO))
     registro.addHandler(gestore)
     registro.setLevel(livello)
     return file
+
+
+def chiudi_log() -> None:
+    """Chiude il file di log, per esempio prima di cancellare la cartella della demo."""
+    registro = logging.getLogger("assenze_desk")
+    for gestore in list(registro.handlers):
+        if isinstance(gestore, GestoreFileApp):
+            registro.removeHandler(gestore)
+            gestore.close()

@@ -29,6 +29,9 @@ dependencies = [
     "PySide6-Essentials>=6.12.0",  # fase 4: interfaccia (LGPL; solo i moduli di base)
 ]
 
+[project.gui-scripts]
+assenze-desk = "assenze_desk.app:main"
+
 [project.optional-dependencies]
 # Strumenti di sviluppo: pip install -e ".[dev]"
 dev = [

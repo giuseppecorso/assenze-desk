@@ -11,7 +11,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import date
 
-from assenze_desk.core.stato import Stato, serve_mail_ufficio
+from assenze_desk.core.stato import SOGLIA_UFFICIO, Stato, serve_mail_ufficio
 
 MINUTI_OLTRE_LA_MEDIA = 10
 GIRI = 6
@@ -83,10 +83,18 @@ def tempo_medio(
     return TempoMedio(media, tuple(validi), tuple(scartati))
 
 
-def riepilogo(pratiche: Sequence[PraticaStatistica]) -> Riepilogo:
+def riepilogo(
+    pratiche: Sequence[PraticaStatistica],
+    soglia_ufficio: int = SOGLIA_UFFICIO,
+    minuti_oltre_la_media: float = MINUTI_OLTRE_LA_MEDIA,
+) -> Riepilogo:
     con_date = [p for p in pratiche if p.giorni is not None]
     giorni = sum(p.giorni or 0 for p in con_date)
-    lunghi = sum(1 for p in pratiche if serve_mail_ufficio(p.giorni_episodio or p.giorni or 0))
+    lunghi = sum(
+        1
+        for p in pratiche
+        if serve_mail_ufficio(p.giorni_episodio or p.giorni or 0, soglia_ufficio)
+    )
 
     per_mese: dict[str, int] = defaultdict(int)
     for p in con_date:
@@ -107,7 +115,10 @@ def riepilogo(pratiche: Sequence[PraticaStatistica]) -> Riepilogo:
         per_dipendente=_classifica(
             pratiche, lambda p: p.cf.strip().upper(), lambda p: p.dipendente
         ),
-        tempo=tempo_medio([p.tempo_gestione_sec for p in pratiche if p.tempo_gestione_sec]),
+        tempo=tempo_medio(
+            [p.tempo_gestione_sec for p in pratiche if p.tempo_gestione_sec],
+            minuti_oltre_la_media,
+        ),
     )
 
 

@@ -17,6 +17,10 @@ class Origine(StrEnum):
     PDF = "PDF"
     ANAGRAFICA = "Anagrafica"
     MANUALE = "Manuale"
+    ARCHIVIO = "Archivio"  # pratica salvata e riaperta: dati già confermati dall'utente
+
+
+PROTETTE = (Origine.MANUALE, Origine.ARCHIVIO)
 
 
 @dataclass(frozen=True)
@@ -43,6 +47,11 @@ class Campo:
         return self.origine is Origine.MANUALE
 
     @property
+    def protetto(self) -> bool:
+        """L'analisi non lo sovrascrive: scritto a mano o già salvato in archivio."""
+        return self.origine in PROTETTE
+
+    @property
     def incerto(self) -> bool:
         return bool(self.avviso)
 
@@ -50,7 +59,7 @@ class Campo:
     def automatico_diverso(self) -> bool:
         """Campo manuale con una proposta diversa: si mostra con "Ripristina"."""
         return (
-            self.manuale
+            self.protetto
             and self.proposta.valore is not None
             and self.proposta.valore != self.valore
         )
@@ -71,7 +80,7 @@ class Modulo:
         """Risultato di un'analisi: aggiorna i campi automatici, mai quelli manuali."""
         for nome, campo in self._campi.items():
             proposta = proposte.get(nome, VUOTA)
-            if campo.manuale:
+            if campo.protetto:
                 self._campi[nome] = replace(campo, proposta=proposta)
             else:
                 self._campi[nome] = _da_proposta(proposta)
@@ -86,6 +95,14 @@ class Modulo:
             campo, valore=valore, origine=Origine.MANUALE, avviso="", scelte=()
         )
         return True
+
+    def carica(self, valori: Mapping[str, object], origine: Origine = Origine.ARCHIVIO) -> None:
+        """Valori già confermati (pratica riaperta): protetti come quelli manuali."""
+        self.svuota()
+        for nome, valore in valori.items():
+            valore = _pulito(valore)
+            if valore is not None:
+                self._campi[nome] = Campo(valore, origine)
 
     def ripristina(self, nome: str) -> None:
         self._campi[nome] = _da_proposta(self._campi[nome].proposta)

@@ -4,7 +4,7 @@ import logging
 
 import pytest
 
-from assenze_desk.registro import configura_log
+from assenze_desk.registro import GestoreFileApp, chiudi_log, configura_log
 
 CF = "FNTPRV80A01Z999Y"
 
@@ -23,6 +23,17 @@ def contenuto(file):
     for gestore in logging.getLogger("assenze_desk").handlers:
         gestore.flush()
     return file.read_text(encoding="utf-8")
+
+
+def test_chiudi_il_log_libera_il_file(tmp_path):
+    file = configura_log(tmp_path / "log")
+    logging.getLogger("assenze_desk.prova").info("riga")
+    chiudi_log()
+    assert not any(
+        isinstance(g, GestoreFileApp) for g in logging.getLogger("assenze_desk").handlers
+    )
+    file.unlink()  # su Windows un file ancora aperto non si può cancellare
+    chiudi_log()  # una seconda volta non fa niente
 
 
 def test_cf_mascherato_nei_messaggi(log):

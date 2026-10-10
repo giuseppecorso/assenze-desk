@@ -92,6 +92,44 @@ def _legge_o_scrive_file(funzione: ast.expr) -> bool:
     return False
 
 
+SORGENTI = CORE.parent
+RIGHE_MASSIME = 600
+
+
+def test_nessun_modulo_oltre_600_righe():
+    # Problema noto 9: la finestra della v6.20 superava le 10.000 righe
+    lunghi = {}
+    for file in sorted(SORGENTI.rglob("*.py")):
+        righe = len(file.read_text(encoding="utf-8-sig").splitlines())
+        if righe > RIGHE_MASSIME:
+            lunghi[file.relative_to(SORGENTI).as_posix()] = righe
+    assert lunghi == {}
+
+
+def usi_di_hasattr_su_self(sorgente: str, nome_file: str = "<test>") -> list[str]:
+    return [
+        f"{nome_file}:{nodo.lineno}"
+        for nodo in ast.walk(ast.parse(sorgente))
+        if isinstance(nodo, ast.Call)
+        and isinstance(nodo.func, ast.Name)
+        and nodo.func.id == "hasattr"
+        and nodo.args
+        and isinstance(nodo.args[0], ast.Name)
+        and nodo.args[0].id == "self"
+    ]
+
+
+def test_nessun_hasattr_per_sapere_se_un_elemento_esiste():
+    # Problema noto 9: 140 controlli hasattr(self, ...) nella v6.20
+    trovati = []
+    for file in sorted(SORGENTI.rglob("*.py")):
+        sorgente = file.read_text(encoding="utf-8-sig")
+        trovati += usi_di_hasattr_su_self(sorgente, file.relative_to(SORGENTI).as_posix())
+    assert trovati == []
+    assert usi_di_hasattr_su_self("if hasattr(self, 'campo'):\n    pass\n") == ["<test>:1"]
+    assert usi_di_hasattr_su_self("hasattr(altro, 'campo')\n") == []
+
+
 def test_il_pacchetto_core_esiste():
     assert (CORE / "__init__.py").is_file()
 

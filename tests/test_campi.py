@@ -112,6 +112,21 @@ def test_valori_e_svuota(modulo):
     assert not modulo["cf"].manuale
 
 
+def test_valori_di_una_pratica_riaperta_sono_protetti(modulo):
+    # Una pratica salvata e riaperta dall'Archivio: i dati li ha già confermati l'utente
+    modulo.carica({"protocollo": "412345678", "fine": date(2026, 10, 9), "cf": None})
+    assert modulo["protocollo"].origine is Origine.ARCHIVIO
+    assert modulo["protocollo"].protetto
+    assert not modulo["protocollo"].manuale
+    assert modulo["cf"].origine is None
+    modulo.proponi({"fine": Proposta(date(2026, 10, 12), Origine.PDF)})
+    assert modulo["protocollo"].valore == "412345678"  # una nuova analisi non svuota
+    assert modulo["fine"].valore == date(2026, 10, 9)
+    assert modulo["fine"].automatico_diverso
+    modulo.ripristina("fine")
+    assert modulo["fine"].valore == date(2026, 10, 12)
+
+
 def test_campo_sconosciuto(modulo):
     with pytest.raises(KeyError):
         modulo.scrivi("inventato", 1)
