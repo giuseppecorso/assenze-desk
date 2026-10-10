@@ -57,6 +57,7 @@ allowed-confusables = ["’", "–", "—"]
 [tool.ruff.lint.per-file-ignores]
 # Gli script da riga di comando scrivono il risultato con print()
 "scripts/**" = ["T20"]
+"demo/**" = ["T20"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
