@@ -35,6 +35,24 @@ class Vocabolario:
     domani: tuple[str, ...] = ("domani", "domattina")
     dopodomani: tuple[str, ...] = ("dopodomani",)
     ieri: tuple[str, ...] = ("ieri",)
+    # Parti della giornata: propongono le ore del turno del cliente
+    mattina: tuple[str, ...] = (
+        "mattina",
+        "mattino",
+        "mattinata",
+        "stamattina",
+        "domattina",
+        "stamani",
+        "stamane",
+    )
+    pomeriggio: tuple[str, ...] = ("pomeriggio",)
+    giornata_intera: tuple[str, ...] = (
+        "tutto il giorno",
+        "tutta la giornata",
+        "giornata intera",
+        "intera giornata",
+        "giorno intero",
+    )
 
     def __post_init__(self) -> None:
         for campo in fields(self):
