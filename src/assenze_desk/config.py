@@ -14,6 +14,7 @@ from dataclasses import dataclass, fields, replace
 from pathlib import Path
 from typing import Any
 
+from assenze_desk.adapters.inps import URL_PORTALE_INPS
 from assenze_desk.core.giustificativi import TIPI_PREDEFINITI, TipoGiustificativo
 from assenze_desk.core.identificativi import JOBORDER, PROTOCOLLO, RegolaNumero
 from assenze_desk.core.vocabolario import VOCABOLARIO, Vocabolario
@@ -26,6 +27,13 @@ class Percorsi:
     certificati: Path
     export: Path
     log: Path
+    download: Path  # dove il browser salva i certificati scaricati dal portale INPS
+
+
+@dataclass(frozen=True)
+class Ocr:
+    tesseract: str = ""  # vuoto = cercato nei percorsi di installazione standard
+    parole_rumore: tuple[str, ...] = ()  # righe da scartare (nomi di programmi sullo schermo)
 
 
 @dataclass(frozen=True)
@@ -77,6 +85,8 @@ class Impostazioni:
     template: Template
     # Certificato PDF: la X delle spunte sta prima della voce? None = automatico
     spunte_prima_della_voce: bool | None = None
+    portale_inps: str = URL_PORTALE_INPS
+    ocr: Ocr = Ocr()
 
 
 def cartella_dati_predefinita() -> Path:
@@ -93,6 +103,7 @@ def impostazioni_predefinite(cartella_dati: Path) -> Impostazioni:
             certificati=cartella_dati / "certificati",
             export=cartella_dati / "export",
             log=cartella_dati / "log",
+            download=Path.home() / "Downloads",
         ),
         ufficio=MailUfficio(),
         protocollo=PROTOCOLLO,
@@ -218,6 +229,20 @@ def _spunte(valore: Any, _predefinite: Impostazioni, _cartella: Path):
     return "spunte_prima_della_voce", valore
 
 
+def _portale(valore: Any, _predefinite: Impostazioni, _cartella: Path):
+    if not isinstance(valore, str) or not valore.startswith(("https://", "http://")):
+        raise ValueError("serve un indirizzo che inizia con https://")
+    return "portale_inps", valore
+
+
+def _ocr(valore: Any, predefinite: Impostazioni, _cartella: Path):
+    tesseract = valore.get("tesseract", predefinite.ocr.tesseract)
+    if not isinstance(tesseract, str):
+        raise TypeError("il percorso di Tesseract deve essere un testo")
+    rumore = valore.get("parole_rumore", list(predefinite.ocr.parole_rumore))
+    return "ocr", Ocr(tesseract=tesseract, parole_rumore=_testi(rumore))
+
+
 def _template(valore: Any, predefinite: Impostazioni, _cartella: Path):
     nomi = {f.name for f in fields(Template)}
     testi = {
@@ -239,6 +264,8 @@ _CONVERSIONI = {
     "giorni_avanti_permessi": _numero("giorni_avanti_permessi"),
     "template": _template,
     "spunte_prima_della_voce": _spunte,
+    "portale_inps": _portale,
+    "ocr": _ocr,
 }
 
 
@@ -275,6 +302,8 @@ def _in_dizionario(imp: Impostazioni) -> dict[str, Any]:
         "giorni_avanti_permessi": imp.giorni_avanti_permessi,
         "template": {f.name: getattr(imp.template, f.name) for f in fields(Template)},
         "spunte_prima_della_voce": imp.spunte_prima_della_voce,
+        "portale_inps": imp.portale_inps,
+        "ocr": {"tesseract": imp.ocr.tesseract, "parole_rumore": list(imp.ocr.parole_rumore)},
     }
 
 

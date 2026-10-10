@@ -19,6 +19,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from assenze_desk.adapters.file import nome_libero
+
 log = logging.getLogger(__name__)
 
 CARTELLA_POSTA_IN_ARRIVO = 6  # olFolderInbox
@@ -94,7 +96,7 @@ class Outlook:
             allegati = originale.Attachments
             for numero in range(1, allegati.Count + 1):
                 allegato = allegati.Item(numero)
-                destinazione = _nome_libero(
+                destinazione = nome_libero(
                     cartella / str(allegato.FileName or f"allegato_{numero}")
                 )
                 allegato.SaveAsFile(str(destinazione))
@@ -216,13 +218,3 @@ def _sottocartella(cartelle: Any, nome: str, percorso: str) -> Any:
         raise ErroreOutlook(
             f"Cartella di Outlook non trovata: '{nome}' in '{percorso}'."
         ) from errore
-
-
-def _nome_libero(percorso: Path) -> Path:
-    """Il percorso, oppure "nome (2).pdf", "nome (3).pdf"... se esiste già."""
-    numero = 2
-    libero = percorso
-    while libero.exists():
-        libero = percorso.with_name(f"{percorso.stem} ({numero}){percorso.suffix}")
-        numero += 1
-    return libero

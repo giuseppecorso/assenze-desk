@@ -5,7 +5,9 @@ from pathlib import Path
 
 import pytest
 
+from assenze_desk.adapters.inps import URL_PORTALE_INPS
 from assenze_desk.config import (
+    Ocr,
     carica_impostazioni,
     cartella_dati_predefinita,
     impostazioni_predefinite,
@@ -112,6 +114,29 @@ def test_posizione_delle_spunte_del_certificato(tmp_path, cartella):
         carica_impostazioni(scrivi(tmp_path, {"spunte_prima_della_voce": "si"}), cartella)
 
 
+def test_voci_di_ocr_e_portale_inps(tmp_path, cartella):
+    imp = impostazioni_predefinite(cartella)
+    assert imp.percorsi.download == Path.home() / "Downloads"
+    assert imp.portale_inps == URL_PORTALE_INPS
+    assert imp.ocr == Ocr(tesseract="", parole_rumore=())  # "" = Tesseract cercato da solo
+
+    file = scrivi(
+        tmp_path,
+        {
+            "percorsi": {"download": str(tmp_path / "scaricati")},
+            "portale_inps": "https://portale.example/attestati",
+            "ocr": {"tesseract": str(tmp_path / "tesseract.exe"), "parole_rumore": ["intranet"]},
+        },
+    )
+    imp, avvisi = carica_impostazioni(file, cartella)
+    assert avvisi == []
+    assert imp.percorsi.download == tmp_path / "scaricati"
+    assert imp.portale_inps == "https://portale.example/attestati"
+    assert imp.ocr == Ocr(str(tmp_path / "tesseract.exe"), ("intranet",))
+    salva_impostazioni(imp, file)
+    assert carica_impostazioni(file, cartella) == (imp, [])
+
+
 def test_voce_sconosciuta_avviso(tmp_path, cartella):
     _imp, avvisi = carica_impostazioni(scrivi(tmp_path, {"voce_inventata": 1}), cartella)
     assert avvisi == ["Voce sconosciuta ignorata: voce_inventata"]
@@ -126,6 +151,9 @@ def test_voce_sconosciuta_avviso(tmp_path, cartella):
         ({"vocabolario_aggiunte": {"parole_inventate": ["x"]}}, "vocabolario_aggiunte"),
         ({"domini_interni": "azienda.example"}, "domini_interni"),
         ({"percorsi": {"cartella_inventata": "x"}}, "percorsi"),
+        ({"portale_inps": "portale.example"}, "portale_inps"),
+        ({"ocr": {"parole_rumore": "intranet"}}, "ocr"),
+        ({"ocr": {"tesseract": 5}}, "ocr"),
     ],
 )
 def test_valore_non_valido_errore_con_la_voce(tmp_path, cartella, contenuto, voce):

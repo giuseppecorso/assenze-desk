@@ -24,6 +24,8 @@ dependencies = [
     "pypdf>=6.20.0",  # fase 3: lettura del certificato PDF
     "fpdf2>=2.8.9",  # fase 3: certificati PDF finti per demo e test
     "pywin32>=312; sys_platform == 'win32'",  # fase 3: Outlook Classic (solo Windows)
+    "pillow>=12.3.0",  # fase 3: immagini per l'OCR
+    "pytesseract>=0.3.13",  # fase 3: OCR (serve anche Tesseract installato sul PC)
 ]
 
 [project.optional-dependencies]
