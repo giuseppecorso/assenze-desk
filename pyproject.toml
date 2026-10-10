@@ -18,9 +18,10 @@ classifiers = [
     # Impedisce la pubblicazione per errore su PyPI
     "Private :: Do Not Upload",
 ]
-# Le librerie dell'app (PySide6, pywin32, openpyxl, pypdf, OCR) si aggiungono
-# nella fase che le usa: per ora il progetto non dipende da nulla.
-dependencies = []
+# Le librerie dell'app si aggiungono nella fase che le usa (D9).
+dependencies = [
+    "openpyxl>=3.1.5",  # fase 2: import anagrafica ed export in Excel
+]
 
 [project.optional-dependencies]
 # Strumenti di sviluppo: pip install -e ".[dev]"
@@ -65,3 +66,5 @@ testpaths = ["tests"]
 pythonpath = ["scripts"]
 # -ra: a fine run elenca il motivo di ogni test saltato o fallito
 addopts = "-ra"
+# Un avviso (es. connessione al database non chiusa) fa fallire i test
+filterwarnings = ["error"]
