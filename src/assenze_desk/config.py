@@ -75,6 +75,8 @@ class Impostazioni:
     minuti_oltre_la_media: int
     giorni_avanti_permessi: int
     template: Template
+    # Certificato PDF: la X delle spunte sta prima della voce? None = automatico
+    spunte_prima_della_voce: bool | None = None
 
 
 def cartella_dati_predefinita() -> Path:
@@ -210,6 +212,12 @@ def _vocabolario(valore: Any, _predefinite: Impostazioni, _cartella: Path):
     return "vocabolario", VOCABOLARIO.estendi(**{c: _testi(p) for c, p in valore.items()})
 
 
+def _spunte(valore: Any, _predefinite: Impostazioni, _cartella: Path):
+    if valore is not None and not isinstance(valore, bool):
+        raise TypeError("serve true, false oppure null (automatico)")
+    return "spunte_prima_della_voce", valore
+
+
 def _template(valore: Any, predefinite: Impostazioni, _cartella: Path):
     nomi = {f.name for f in fields(Template)}
     testi = {
@@ -230,6 +238,7 @@ _CONVERSIONI = {
     "minuti_oltre_la_media": _numero("minuti_oltre_la_media"),
     "giorni_avanti_permessi": _numero("giorni_avanti_permessi"),
     "template": _template,
+    "spunte_prima_della_voce": _spunte,
 }
 
 
@@ -265,6 +274,7 @@ def _in_dizionario(imp: Impostazioni) -> dict[str, Any]:
         "minuti_oltre_la_media": imp.minuti_oltre_la_media,
         "giorni_avanti_permessi": imp.giorni_avanti_permessi,
         "template": {f.name: getattr(imp.template, f.name) for f in fields(Template)},
+        "spunte_prima_della_voce": imp.spunte_prima_della_voce,
     }
 
 

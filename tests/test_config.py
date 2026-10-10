@@ -104,6 +104,14 @@ def test_percorsi_relativi_alla_cartella_dati(tmp_path, cartella):
     assert imp.percorsi.anagrafica == assoluto
 
 
+def test_posizione_delle_spunte_del_certificato(tmp_path, cartella):
+    assert impostazioni_predefinite(cartella).spunte_prima_della_voce is None  # automatico
+    imp, _ = carica_impostazioni(scrivi(tmp_path, {"spunte_prima_della_voce": True}), cartella)
+    assert imp.spunte_prima_della_voce is True
+    with pytest.raises(ValueError, match="spunte_prima_della_voce"):
+        carica_impostazioni(scrivi(tmp_path, {"spunte_prima_della_voce": "si"}), cartella)
+
+
 def test_voce_sconosciuta_avviso(tmp_path, cartella):
     _imp, avvisi = carica_impostazioni(scrivi(tmp_path, {"voce_inventata": 1}), cartella)
     assert avvisi == ["Voce sconosciuta ignorata: voce_inventata"]

@@ -21,6 +21,8 @@ classifiers = [
 # Le librerie dell'app si aggiungono nella fase che le usa (D9).
 dependencies = [
     "openpyxl>=3.1.5",  # fase 2: import anagrafica ed export in Excel
+    "pypdf>=6.20.0",  # fase 3: lettura del certificato PDF
+    "fpdf2>=2.8.9",  # fase 3: certificati PDF finti per demo e test
 ]
 
 [project.optional-dependencies]
@@ -68,3 +70,5 @@ pythonpath = ["scripts"]
 addopts = "-ra"
 # Un avviso (es. connessione al database non chiusa) fa fallire i test
 filterwarnings = ["error"]
+# Solo "test_...": con i nomi italiani anche "testo_pdf" verrebbe preso per un test
+python_functions = ["test_*"]
