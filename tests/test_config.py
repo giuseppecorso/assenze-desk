@@ -1,0 +1,142 @@
+"""File delle impostazioni (issue #3): valori predefiniti, file parziali, errori chiari."""
+
+import json
+from pathlib import Path
+
+import pytest
+
+from assenze_desk.config import (
+    carica_impostazioni,
+    cartella_dati_predefinita,
+    impostazioni_predefinite,
+    salva_impostazioni,
+)
+from assenze_desk.core.giustificativi import TIPI_PREDEFINITI, TipoGiustificativo
+from assenze_desk.core.identificativi import JOBORDER, PROTOCOLLO, RegolaNumero
+from assenze_desk.core.vocabolario import VOCABOLARIO
+
+
+@pytest.fixture
+def cartella(tmp_path):
+    return tmp_path / "dati"
+
+
+def scrivi(tmp_path, contenuto):
+    file = tmp_path / "impostazioni.json"
+    file.write_text(json.dumps(contenuto), encoding="utf-8")
+    return file
+
+
+def test_valori_predefiniti(cartella):
+    imp = impostazioni_predefinite(cartella)
+    assert imp.percorsi.archivio == cartella / "archivio.db"
+    assert imp.percorsi.anagrafica == cartella / "anagrafica.xlsx"
+    assert imp.protocollo == PROTOCOLLO
+    assert imp.joborder == JOBORDER
+    assert imp.tipi == TIPI_PREDEFINITI
+    assert imp.vocabolario == VOCABOLARIO
+    assert imp.soglia_ufficio == 3
+    assert imp.minuti_oltre_la_media == 10
+    assert imp.domini_interni == ()
+    assert "{PROTOCOLLO}" in imp.template.corpo_lavoratore
+
+
+def test_file_mancante_valori_predefiniti(tmp_path, cartella):
+    imp, avvisi = carica_impostazioni(tmp_path / "manca.json", cartella)
+    assert imp == impostazioni_predefinite(cartella)
+    assert avvisi == ["File delle impostazioni non trovato: uso i valori predefiniti."]
+
+
+def test_salva_e_ricarica(tmp_path, cartella):
+    file = tmp_path / "impostazioni.json"
+    imp = impostazioni_predefinite(cartella)
+    salva_impostazioni(imp, file)
+    assert carica_impostazioni(file, cartella) == (imp, [])
+
+
+def test_file_parziale_sovrascrive_solo_le_voci_presenti(tmp_path, cartella):
+    file = scrivi(
+        tmp_path,
+        {
+            "soglia_ufficio": 5,
+            "domini_interni": ["azienda.example"],
+            "ufficio": {"destinatari": ["ufficio@example.com"]},
+            "protocollo": {"lunghezza": 10, "prefissi": ["5"]},
+        },
+    )
+    imp, avvisi = carica_impostazioni(file, cartella)
+    assert avvisi == []
+    assert imp.soglia_ufficio == 5
+    assert imp.domini_interni == ("azienda.example",)
+    assert imp.ufficio.destinatari == ("ufficio@example.com",)
+    assert imp.ufficio.copia == ()
+    assert imp.protocollo == RegolaNumero(10, ("5",), PROTOCOLLO.parole_chiave)
+    assert imp.tipi == TIPI_PREDEFINITI
+
+
+def test_parole_aggiunte_al_vocabolario(tmp_path, cartella):
+    file = scrivi(
+        tmp_path, {"vocabolario_aggiunte": {"unita_ore": ["hr"], "invece": ["piuttosto che"]}}
+    )
+    imp, _ = carica_impostazioni(file, cartella)
+    assert imp.vocabolario == VOCABOLARIO.estendi(unita_ore=["hr"], invece=["piuttosto che"])
+    salva_impostazioni(imp, file)
+    salvato = json.loads(file.read_text(encoding="utf-8"))
+    assert salvato["vocabolario_aggiunte"] == {"unita_ore": ["hr"], "invece": ["piuttosto che"]}
+
+
+def test_tipi_dal_file_al_posto_dei_predefiniti(tmp_path, cartella):
+    file = scrivi(
+        tmp_path,
+        {"tipi": [{"nome": "Lavoro agile", "codice": "SW", "parole_chiave": ["smart working"]}]},
+    )
+    imp, _ = carica_impostazioni(file, cartella)
+    assert imp.tipi == (TipoGiustificativo("Lavoro agile", "SW", ("smart working",)),)
+
+
+def test_percorsi_relativi_alla_cartella_dati(tmp_path, cartella):
+    assoluto = tmp_path / "altrove" / "anagrafica.xlsx"
+    file = scrivi(
+        tmp_path, {"percorsi": {"archivio": "db/archivio.db", "anagrafica": str(assoluto)}}
+    )
+    imp, _ = carica_impostazioni(file, cartella)
+    assert imp.percorsi.archivio == cartella / "db" / "archivio.db"
+    assert imp.percorsi.anagrafica == assoluto
+
+
+def test_voce_sconosciuta_avviso(tmp_path, cartella):
+    _imp, avvisi = carica_impostazioni(scrivi(tmp_path, {"voce_inventata": 1}), cartella)
+    assert avvisi == ["Voce sconosciuta ignorata: voce_inventata"]
+
+
+@pytest.mark.parametrize(
+    ("contenuto", "voce"),
+    [
+        ({"soglia_ufficio": "tre"}, "soglia_ufficio"),
+        ({"protocollo": {"lunghezza": 0}}, "protocollo"),
+        ({"tipi": [{"nome": "Ferie"}]}, "tipi"),
+        ({"vocabolario_aggiunte": {"parole_inventate": ["x"]}}, "vocabolario_aggiunte"),
+        ({"domini_interni": "azienda.example"}, "domini_interni"),
+        ({"percorsi": {"cartella_inventata": "x"}}, "percorsi"),
+    ],
+)
+def test_valore_non_valido_errore_con_la_voce(tmp_path, cartella, contenuto, voce):
+    with pytest.raises(ValueError, match=voce):
+        carica_impostazioni(scrivi(tmp_path, contenuto), cartella)
+
+
+def test_json_rovinato(tmp_path, cartella):
+    file = tmp_path / "impostazioni.json"
+    file.write_text("{ non è json", encoding="utf-8")
+    with pytest.raises(ValueError, match="impostazioni"):
+        carica_impostazioni(file, cartella)
+    file.write_text("[1, 2]", encoding="utf-8")  # JSON valido ma non un oggetto
+    with pytest.raises(ValueError, match="impostazioni"):
+        carica_impostazioni(file, cartella)
+
+
+def test_cartella_dati_predefinita(monkeypatch, tmp_path):
+    monkeypatch.setenv("LOCALAPPDATA", str(tmp_path))
+    assert cartella_dati_predefinita() == tmp_path / "AssenzeDesk"
+    monkeypatch.delenv("LOCALAPPDATA")
+    assert cartella_dati_predefinita() == Path.home() / ".assenze-desk"
