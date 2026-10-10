@@ -1,0 +1,712 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Assenze Desk – mockup</title>
+<style>
+/* Design system: gli stessi valori diventeranno il QSS dell'app (gui/tema.py). */
+:root {
+  --sfondo: #f4f5f7;
+  --superficie: #ffffff;
+  --superficie-2: #f0f2f5;
+  --bordo: #dde1e6;
+  --testo: #1f2328;
+  --testo-2: #5f6b7a;
+  --accento: #2563eb;
+  --accento-testo: #ffffff;
+  --accento-tenue: #e8f0fe;
+  --ok: #1a7f37;
+  --ok-tenue: #e6f4ea;
+  --attenzione: #8a5a00;
+  --attenzione-tenue: #fff4d6;
+  --attenzione-bordo: #e0b000;
+  --errore: #cf222e;
+  --errore-tenue: #fdecee;
+  --pdf: #7c3aed;
+  --pdf-tenue: #f1ebff;
+  --anagrafica: #0e7c86;
+  --anagrafica-tenue: #e0f5f6;
+  --manuale: #5f6b7a;
+  --manuale-tenue: #eceef1;
+  --r-piccolo: 6px;
+  --r-grande: 10px;
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px;
+  --font: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  --mono: "Cascadia Mono", Consolas, monospace;
+}
+[data-tema="scuro"] {
+  --sfondo: #16181c;
+  --superficie: #1f2228;
+  --superficie-2: #272b32;
+  --bordo: #353b44;
+  --testo: #e6e8eb;
+  --testo-2: #9aa4b2;
+  --accento: #5b9bff;
+  --accento-testo: #0b1220;
+  --accento-tenue: #1d2a40;
+  --ok: #4cc38a;
+  --ok-tenue: #16301f;
+  --attenzione: #e3b341;
+  --attenzione-tenue: #3a2f12;
+  --attenzione-bordo: #b8902a;
+  --errore: #ff7b7b;
+  --errore-tenue: #3d1d20;
+  --pdf: #b69cff;
+  --pdf-tenue: #2a2140;
+  --anagrafica: #4fd1c5;
+  --anagrafica-tenue: #123236;
+  --manuale: #b0b8c4;
+  --manuale-tenue: #2c3038;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0; padding: var(--s4); font: 13px/1.45 var(--font);
+  background: #8a929c; color: var(--testo);
+}
+[data-tema="scuro"] body, body[data-tema="scuro"] { background: #0b0c0e; }
+
+/* --- Barra del mockup (non fa parte dell'app) --- */
+.barra-mockup {
+  max-width: 1320px; margin: 0 auto var(--s3); display: flex; flex-wrap: wrap;
+  gap: var(--s2); align-items: center; color: #fff; font-size: 13px;
+}
+.barra-mockup strong { margin-right: var(--s2); }
+.barra-mockup button {
+  font: inherit; border: 1px solid rgba(255,255,255,.5); background: transparent;
+  color: #fff; padding: 4px 10px; border-radius: var(--r-piccolo); cursor: pointer;
+}
+.barra-mockup button.attivo { background: #fff; color: #1f2328; }
+.barra-mockup .spazio { flex: 1; }
+
+/* --- Finestra dell'app --- */
+.app {
+  max-width: 1320px; min-height: 820px; margin: 0 auto; display: grid;
+  grid-template-columns: 208px 1fr; background: var(--sfondo);
+  border-radius: var(--r-grande); overflow: hidden; box-shadow: 0 8px 30px rgba(0,0,0,.25);
+}
+.laterale {
+  background: var(--superficie); border-right: 1px solid var(--bordo);
+  display: flex; flex-direction: column; padding: var(--s4) var(--s3);
+}
+.marchio { font-weight: 600; font-size: 15px; padding: 0 var(--s2) var(--s4); display: flex; gap: var(--s2); align-items: center; }
+.marchio .logo { width: 26px; height: 26px; border-radius: 7px; background: var(--accento); color: var(--accento-testo); display: grid; place-items: center; font-size: 12px; }
+.voce {
+  display: flex; align-items: center; gap: var(--s2); padding: 8px 10px; border-radius: var(--r-piccolo);
+  color: var(--testo-2); cursor: pointer; margin-bottom: 2px; user-select: none;
+}
+.voce:hover { background: var(--superficie-2); }
+.voce.attiva { background: var(--accento-tenue); color: var(--accento); font-weight: 600; }
+.laterale .fondo { margin-top: auto; display: grid; gap: var(--s2); }
+.demo { font-size: 12px; padding: 6px 10px; border-radius: var(--r-piccolo); background: var(--attenzione-tenue); color: var(--attenzione); }
+.tema { display: flex; border: 1px solid var(--bordo); border-radius: var(--r-piccolo); overflow: hidden; }
+.tema span { flex: 1; text-align: center; padding: 5px 0; font-size: 12px; color: var(--testo-2); cursor: pointer; }
+.tema span.attivo { background: var(--superficie-2); color: var(--testo); font-weight: 600; }
+
+.principale { display: flex; flex-direction: column; min-width: 0; }
+.intestazione { display: flex; align-items: center; gap: var(--s3); padding: var(--s4) var(--s5) var(--s3); }
+.intestazione h1 { font-size: 20px; font-weight: 600; margin: 0; }
+.intestazione .destra { margin-left: auto; display: flex; gap: var(--s2); align-items: center; }
+.contenuto { flex: 1; padding: 0 var(--s5) var(--s4); min-height: 0; }
+.schermata { display: none; }
+.schermata.visibile { display: block; }
+
+/* --- Componenti --- */
+svg.i { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+.scheda { background: var(--superficie); border: 1px solid var(--bordo); border-radius: var(--r-grande); padding: var(--s4); margin-bottom: var(--s3); }
+.scheda h2 { font-size: 13px; font-weight: 600; margin: 0 0 var(--s3); display: flex; align-items: center; gap: var(--s2); }
+.scheda h2 .destra { margin-left: auto; font-weight: 400; }
+.colonne { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: var(--s3); align-items: start; }
+.pulsante {
+  display: inline-flex; align-items: center; gap: 6px; font: inherit; padding: 6px 12px;
+  border-radius: var(--r-piccolo); border: 1px solid var(--bordo); background: var(--superficie);
+  color: var(--testo); cursor: pointer; white-space: nowrap;
+}
+.pulsante:hover { background: var(--superficie-2); }
+.pulsante.primario { background: var(--accento); border-color: var(--accento); color: var(--accento-testo); font-weight: 600; }
+.pulsante.piatto { border-color: transparent; background: transparent; color: var(--accento); padding: 4px 6px; }
+.pulsante[disabled] { opacity: .45; cursor: default; }
+.tasto { font-size: 11px; opacity: .8; border: 1px solid currentColor; border-radius: 4px; padding: 0 4px; }
+.riga-pulsanti { display: flex; flex-wrap: wrap; gap: var(--s2); align-items: center; }
+.segmenti { display: inline-flex; background: var(--superficie-2); border: 1px solid var(--bordo); border-radius: 8px; padding: 2px; }
+.segmenti span { padding: 5px 14px; border-radius: 6px; color: var(--testo-2); cursor: pointer; user-select: none; }
+.segmenti span.attivo { background: var(--superficie); color: var(--testo); font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,.12); }
+.badge { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; padding: 2px 8px; border-radius: 999px; font-weight: 600; }
+.b-ok { background: var(--ok-tenue); color: var(--ok); }
+.b-attenzione { background: var(--attenzione-tenue); color: var(--attenzione); }
+.b-errore { background: var(--errore-tenue); color: var(--errore); }
+.b-info { background: var(--accento-tenue); color: var(--accento); }
+.b-neutro { background: var(--manuale-tenue); color: var(--manuale); }
+
+.mail-meta { color: var(--testo-2); font-size: 12px; margin: var(--s3) 0 var(--s2); }
+.testo-mail {
+  width: 100%; min-height: 300px; resize: vertical; padding: var(--s3); border-radius: var(--r-piccolo);
+  border: 1px solid var(--bordo); background: var(--superficie); color: var(--testo); font: 13px/1.5 var(--font);
+}
+.allegato { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: var(--r-piccolo); background: var(--superficie-2); border: 1px solid var(--bordo); font-size: 12px; }
+
+/* Campi con origine del dato */
+.campi { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s3) var(--s4); }
+.campo label { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--testo-2); margin-bottom: 4px; }
+.campo .valore { display: flex; gap: var(--s2); align-items: center; }
+.campo input, .campo select, .cerca input {
+  width: 100%; font: inherit; color: var(--testo); background: var(--superficie);
+  border: 1px solid var(--bordo); border-radius: var(--r-piccolo); padding: 6px 10px;
+}
+.campo.incerto input, .campo.incerto select { border-color: var(--attenzione-bordo); background: var(--attenzione-tenue); }
+.campo .messaggio { font-size: 12px; color: var(--attenzione); margin-top: 4px; display: flex; gap: 4px; align-items: center; }
+.campo .ripristina { font-size: 12px; margin-top: 4px; color: var(--testo-2); }
+.campo .ripristina a { color: var(--accento); text-decoration: none; }
+.origine { font-size: 11px; font-weight: 600; padding: 1px 6px; border-radius: 4px; }
+.o-testo { background: var(--accento-tenue); color: var(--accento); }
+.o-pdf { background: var(--pdf-tenue); color: var(--pdf); }
+.o-anagrafica { background: var(--anagrafica-tenue); color: var(--anagrafica); }
+.o-manuale { background: var(--manuale-tenue); color: var(--manuale); }
+.mono { font-family: var(--mono); font-size: 12.5px; }
+
+/* Dipendente */
+.cerca { position: relative; }
+.cerca svg { position: absolute; left: 10px; top: 9px; color: var(--testo-2); }
+.cerca input { padding-left: 32px; }
+.persona { display: flex; gap: var(--s3); align-items: center; padding: var(--s3); border-radius: var(--r-piccolo); border: 1px solid var(--bordo); margin-top: var(--s2); }
+.persona.scelta { border-color: var(--accento); background: var(--accento-tenue); }
+.persona .iniziali { width: 32px; height: 32px; border-radius: 50%; background: var(--superficie-2); display: grid; place-items: center; font-weight: 600; font-size: 12px; color: var(--testo-2); flex: none; }
+.persona.scelta .iniziali { background: var(--accento); color: var(--accento-testo); }
+.persona .nome { font-weight: 600; }
+.persona .dettagli { font-size: 12px; color: var(--testo-2); }
+.persona .azione { margin-left: auto; }
+.sottotitolo { font-size: 12px; color: var(--testo-2); margin: var(--s3) 0 0; }
+
+.passi { display: grid; gap: var(--s2); counter-reset: passo; }
+.passo { display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap; }
+.passo::before { counter-increment: passo; content: counter(passo); width: 20px; height: 20px; border-radius: 50%; background: var(--superficie-2); color: var(--testo-2); display: grid; place-items: center; font-size: 11px; font-weight: 600; }
+.separatore { border: 0; border-top: 1px solid var(--bordo); margin: var(--s4) 0; }
+.avviso { display: flex; gap: var(--s2); align-items: flex-start; padding: var(--s3); border-radius: var(--r-piccolo); font-size: 12.5px; }
+.avviso.attenzione { background: var(--attenzione-tenue); color: var(--attenzione); }
+.avviso.ok { background: var(--ok-tenue); color: var(--ok); }
+.avviso.info { background: var(--accento-tenue); color: var(--accento); }
+.avviso .testo { color: var(--testo); }
+
+.interruttore { display: inline-flex; align-items: center; gap: var(--s2); cursor: pointer; color: var(--testo); }
+.interruttore .binario { width: 34px; height: 20px; border-radius: 999px; background: var(--bordo); position: relative; flex: none; }
+.interruttore .binario::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: left .15s; }
+.interruttore.acceso .binario { background: var(--accento); }
+.interruttore.acceso .binario::after { left: 16px; }
+
+.giorni { display: flex; flex-wrap: wrap; gap: 6px; }
+.giorno { padding: 3px 10px; border-radius: 999px; border: 1px solid var(--bordo); font-size: 12px; }
+.giorno.lavorativo { background: var(--accento-tenue); color: var(--accento); border-color: transparent; font-weight: 600; }
+.giorno.escluso { color: var(--testo-2); text-decoration: line-through; }
+
+table { width: 100%; border-collapse: collapse; }
+th { text-align: left; font-size: 12px; font-weight: 600; color: var(--testo-2); padding: 6px 8px; border-bottom: 1px solid var(--bordo); white-space: nowrap; }
+td { padding: 7px 8px; border-bottom: 1px solid var(--bordo); white-space: nowrap; }
+tr.selezionata td { background: var(--accento-tenue); }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+tfoot td { font-weight: 600; border-bottom: 0; }
+
+.filtri { display: flex; flex-wrap: wrap; gap: var(--s2); align-items: center; margin-bottom: var(--s3); }
+.filtri .cerca { width: 280px; }
+.filtri select, .filtri input[type=text] { font: inherit; color: var(--testo); background: var(--superficie); border: 1px solid var(--bordo); border-radius: var(--r-piccolo); padding: 6px 8px; }
+
+.kpi { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--s3); margin-bottom: var(--s3); }
+.kpi .scheda { margin: 0; }
+.kpi .numero { font-size: 26px; font-weight: 600; line-height: 1.2; }
+.kpi .etichetta { color: var(--testo-2); font-size: 12px; }
+.barre { display: flex; align-items: flex-end; gap: 10px; height: 160px; padding-top: var(--s2); }
+.barre div { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 4px; height: 100%; font-size: 11px; color: var(--testo-2); }
+.barre b { display: block; width: 100%; background: var(--accento); border-radius: 4px 4px 0 0; opacity: .85; }
+.orizzontali { display: grid; gap: var(--s2); }
+.orizzontali .riga { display: grid; grid-template-columns: 90px 1fr 34px; gap: var(--s2); align-items: center; font-size: 12px; }
+.orizzontali .traccia { height: 8px; background: var(--superficie-2); border-radius: 999px; overflow: hidden; }
+.orizzontali .traccia b { display: block; height: 100%; border-radius: 999px; }
+
+.impostazioni { display: grid; grid-template-columns: 200px 1fr; gap: var(--s3); align-items: start; }
+.sottomenu { background: var(--superficie); border: 1px solid var(--bordo); border-radius: var(--r-grande); padding: var(--s2); }
+.sottomenu div { padding: 7px 10px; border-radius: var(--r-piccolo); color: var(--testo-2); }
+.sottomenu div.attiva { background: var(--accento-tenue); color: var(--accento); font-weight: 600; }
+.modulo { display: grid; grid-template-columns: 150px 1fr auto; gap: var(--s2) var(--s3); align-items: center; }
+.modulo label { color: var(--testo-2); }
+.modulo input { font: inherit; color: var(--testo); background: var(--superficie); border: 1px solid var(--bordo); border-radius: var(--r-piccolo); padding: 6px 10px; }
+.piede { display: flex; justify-content: flex-end; gap: var(--s2); align-items: center; }
+.piede .nota-file { margin-right: auto; color: var(--testo-2); font-size: 12px; }
+
+/* Pannello del log */
+.log { border-top: 1px solid var(--bordo); background: var(--superficie); }
+.log .titolo { display: flex; align-items: center; gap: var(--s2); padding: 6px var(--s5); font-size: 12px; color: var(--testo-2); cursor: pointer; user-select: none; }
+.log pre { margin: 0; padding: 0 var(--s5) var(--s3); font: 12px/1.6 var(--mono); color: var(--testo-2); }
+.log.chiuso pre { display: none; }
+
+/* Note del mockup */
+.nota { display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: #e8590c; color: #fff; font-size: 11px; font-weight: 700; flex: none; vertical-align: middle; }
+.note { max-width: 1320px; margin: var(--s4) auto 0; background: #fff; color: #1f2328; border-radius: var(--r-grande); padding: var(--s4) var(--s5); }
+.note h3 { margin: 0 0 var(--s2); font-size: 14px; }
+.note ol { margin: 0; padding-left: 0; list-style: none; display: grid; gap: 6px; }
+.note li { display: flex; gap: var(--s2); align-items: flex-start; }
+.note .gruppo { display: none; }
+.note .gruppo.visibile { display: block; }
+.note .domanda { margin-top: var(--s3); padding: var(--s3); border-radius: var(--r-piccolo); background: #fff4d6; }
+</style>
+</head>
+<body data-tema="chiaro">
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-nuova" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M12 10v7M8.5 13.5h7"/></symbol>
+  <symbol id="i-archivio" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="5" rx="1"/><path d="M5 9v10h14V9M10 13h4"/></symbol>
+  <symbol id="i-statistiche" viewBox="0 0 24 24"><path d="M5 20V11M12 20V5M19 20v-7"/></symbol>
+  <symbol id="i-impostazioni" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/></symbol>
+  <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></symbol>
+  <symbol id="i-incolla" viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4h6v3H9z"/></symbol>
+  <symbol id="i-selezione" viewBox="0 0 24 24"><path d="M9 4h6M9 20h6M12 4v16"/></symbol>
+  <symbol id="i-ocr" viewBox="0 0 24 24"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M8 12h8"/></symbol>
+  <symbol id="i-analizza" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+  <symbol id="i-cerca" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/></symbol>
+  <symbol id="i-ripristina" viewBox="0 0 24 24"><path d="M4 9h11a5 5 0 0 1 0 10H9M4 9l4-4M4 9l4 4"/></symbol>
+  <symbol id="i-avviso" viewBox="0 0 24 24"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/></symbol>
+  <symbol id="i-copia" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M4 16V5a1 1 0 0 1 1-1h11"/></symbol>
+  <symbol id="i-esterno" viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></symbol>
+  <symbol id="i-scarica" viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></symbol>
+  <symbol id="i-cartella" viewBox="0 0 24 24"><path d="M3 6a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/></symbol>
+  <symbol id="i-salva" viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></symbol>
+  <symbol id="i-log" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></symbol>
+  <symbol id="i-persona" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></symbol>
+  <symbol id="i-calendario" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></symbol>
+  <symbol id="i-sposta" viewBox="0 0 24 24"><path d="M3 6a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="M10 13h6M13 10l3 3-3 3"/></symbol>
+</svg>
+
+<div class="barra-mockup">
+  <strong>Mockup di Assenze Desk</strong> dati finti · clicca la barra laterale o qui:
+  <button data-vai="malattia" class="attivo">Nuova pratica · Malattia</button>
+  <button data-vai="giustificativo">Nuova pratica · Giustificativo</button>
+  <button data-vai="archivio">Archivio</button>
+  <button data-vai="statistiche">Statistiche</button>
+  <button data-vai="impostazioni">Impostazioni</button>
+  <span class="spazio"></span>
+  <button data-tema-mockup="chiaro" class="attivo">Tema chiaro</button>
+  <button data-tema-mockup="scuro">Tema scuro</button>
+</div>
+
+<div class="app">
+  <aside class="laterale">
+    <div class="marchio"><span class="logo">AD</span>Assenze Desk</div>
+    <div class="voce attiva" data-vai="malattia" data-sezione="nuova"><svg class="i"><use href="#i-nuova"/></svg>Nuova pratica</div>
+    <div class="voce" data-vai="archivio" data-sezione="archivio"><svg class="i"><use href="#i-archivio"/></svg>Archivio</div>
+    <div class="voce" data-vai="statistiche" data-sezione="statistiche"><svg class="i"><use href="#i-statistiche"/></svg>Statistiche</div>
+    <div class="voce" data-vai="impostazioni" data-sezione="impostazioni"><svg class="i"><use href="#i-impostazioni"/></svg>Impostazioni</div>
+    <div class="fondo">
+      <div class="demo"><span class="nota">D</span> Modalità demo: dati finti, Outlook non usato</div>
+      <div class="tema"><span data-tema-mockup="sistema">Sistema</span><span data-tema-mockup="chiaro" class="attivo">Chiaro</span><span data-tema-mockup="scuro">Scuro</span></div>
+    </div>
+  </aside>
+
+  <div class="principale">
+    <!-- ============ NUOVA PRATICA – MALATTIA ============ -->
+    <section class="schermata visibile" id="malattia">
+      <div class="intestazione">
+        <h1>Nuova pratica</h1>
+        <div class="segmenti"><span class="attivo">Malattia</span><span data-vai="giustificativo">Giustificativo</span></div>
+        <span class="nota">1</span>
+        <div class="destra"><span class="badge b-attenzione">Da inviare</span><button class="pulsante piatto">Nuova pratica vuota</button></div>
+      </div>
+      <div class="contenuto">
+        <div class="colonne">
+          <div>
+            <div class="scheda">
+              <h2><svg class="i"><use href="#i-mail"/></svg>Mail <span class="nota">2</span></h2>
+              <div class="riga-pulsanti">
+                <button class="pulsante"><svg class="i"><use href="#i-mail"/></svg>Importa da Outlook</button>
+                <button class="pulsante"><svg class="i"><use href="#i-incolla"/></svg>Incolla</button>
+                <button class="pulsante"><svg class="i"><use href="#i-selezione"/></svg>Testo selezionato</button>
+                <button class="pulsante"><svg class="i"><use href="#i-ocr"/></svg>OCR zona</button>
+              </div>
+              <div class="mail-meta">Da anna.esempio@example.com · ricevuta 07/10/2026 09:12 · importata da Outlook</div>
+              <textarea class="testo-mail">OGG: Certificato di malattia
+
+Buongiorno,
+vi invio il certificato di malattia, protocollo 412345678,
+dal 5 al 9 ottobre. JobOrder 201234567.
+
+Cordiali saluti
+Anna Esempio</textarea>
+              <div class="riga-pulsanti" style="margin-top: var(--s3)">
+                <span class="allegato"><svg class="i"><use href="#i-file"/></svg>412345678.pdf · letto</span>
+                <button class="pulsante piatto"><svg class="i"><use href="#i-file"/></svg>Apri un PDF…</button>
+                <span style="margin-left:auto"></span>
+                <button class="pulsante primario"><svg class="i"><use href="#i-analizza"/></svg>Analizza <span class="tasto">Ctrl+Invio</span></button>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div class="scheda">
+              <h2><svg class="i"><use href="#i-persona"/></svg>Dipendente <span class="nota">6</span></h2>
+              <div class="cerca"><svg class="i"><use href="#i-cerca"/></svg><input placeholder="Cerca per cognome, nome, CF, JobOrder o cliente"></div>
+              <div class="persona scelta">
+                <span class="iniziali">AE</span>
+                <div><div class="nome">Anna Esempio <span class="origine o-anagrafica">Anagrafica · dal JobOrder</span></div>
+                  <div class="dettagli">Alfa Srl · JobOrder 201234567 · 01/03/2026 → 31/12/2026</div></div>
+                <button class="pulsante piatto azione">Cambia</button>
+              </div>
+              <p class="sottotitolo">Altri possibili</p>
+              <div class="persona">
+                <span class="iniziali">AE</span>
+                <div><div class="nome">Anna Esempio</div>
+                  <div class="dettagli">Beta Spa · JobOrder 201198765 · 01/01/2025 → 28/02/2026 · non attivo nel periodo</div></div>
+                <button class="pulsante azione">Scegli</button>
+              </div>
+              <div class="riga-pulsanti" style="margin-top: var(--s2)"><button class="pulsante piatto">Inserisci a mano (senza anagrafica)</button></div>
+            </div>
+
+            <div class="scheda">
+              <h2><svg class="i"><use href="#i-file"/></svg>Certificato <span class="nota">3</span></h2>
+              <div class="campi">
+                <div class="campo"><label>Protocollo <span class="origine o-testo">Testo</span></label><div class="valore"><input class="mono" value="412345678"></div></div>
+                <div class="campo"><label>Codice fiscale <span class="origine o-pdf">PDF</span></label><div class="valore"><input class="mono" value="OUBDTM84D45Z999B"></div></div>
+                <div class="campo"><label>Dal <span class="origine o-pdf">PDF</span></label><div class="valore"><input value="05/10/2026"></div></div>
+                <div class="campo"><label>Al <span class="origine o-manuale">Manuale</span> <span class="nota">4</span></label><div class="valore"><input value="10/10/2026"></div>
+                  <div class="ripristina">Automatico: 09/10/2026 · <a href="#"><svg class="i" style="width:12px;height:12px;vertical-align:-2px"><use href="#i-ripristina"/></svg> Ripristina</a></div></div>
+                <div class="campo incerto"><label>Tipo di certificato <span class="nota">5</span></label><div class="valore"><select><option>— scegli —</option><option>Inizio</option><option>Continuazione</option><option>Ricaduta</option></select></div>
+                  <div class="messaggio"><svg class="i" style="width:13px;height:13px"><use href="#i-avviso"/></svg>Nel PDF la spunta non è chiara: scegli tu.</div></div>
+                <div class="campo"><label>Ricevuta <span class="origine o-testo">Testo</span></label><div class="valore"><input value="07/10/2026 09:12"></div></div>
+              </div>
+              <hr class="separatore">
+              <div class="riga-pulsanti">
+                <svg class="i"><use href="#i-calendario"/></svg><strong>Episodio</strong> 05/10/2026 → 10/10/2026 · 6 giorni · 1 certificato
+                <span class="badge b-info" style="margin-left:auto">Oltre 3 giorni: serve la mail all'ufficio</span>
+              </div>
+            </div>
+
+            <div class="scheda">
+              <h2>Certificato dal portale INPS <span class="nota">7</span></h2>
+              <div class="passi">
+                <div class="passo"><button class="pulsante"><svg class="i"><use href="#i-esterno"/></svg>Apri il portale</button> <button class="pulsante piatto"><svg class="i"><use href="#i-copia"/></svg>Copia CF</button><button class="pulsante piatto"><svg class="i"><use href="#i-copia"/></svg>Copia protocollo</button></div>
+                <div class="passo">Inserisci il codice di controllo e scarica il PDF dal browser.</div>
+                <div class="passo"><button class="pulsante"><svg class="i"><use href="#i-scarica"/></svg>Ho scaricato il PDF</button> <span style="color:var(--testo-2);font-size:12px">lo cerca nei Download, lo salva come 412345678.pdf e lo legge</span></div>
+              </div>
+            </div>
+
+            <div class="scheda">
+              <h2>Azioni <span class="nota">8</span></h2>
+              <div class="riga-pulsanti">
+                <button class="pulsante"><svg class="i"><use href="#i-mail"/></svg>Bozza al lavoratore</button>
+                <button class="pulsante"><svg class="i"><use href="#i-mail"/></svg>Bozza all'ufficio</button>
+                <button class="pulsante"><svg class="i"><use href="#i-sposta"/></svg>Sposta mail</button>
+                <span style="margin-left:auto"></span>
+                <button class="pulsante primario"><svg class="i"><use href="#i-salva"/></svg>Salva pratica</button>
+              </div>
+              <p class="sottotitolo">Le mail restano bozze: le invii tu da Outlook.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ NUOVA PRATICA – GIUSTIFICATIVO ============ -->
+    <section class="schermata" id="giustificativo">
+      <div class="intestazione">
+        <h1>Nuova pratica</h1>
+        <div class="segmenti"><span data-vai="malattia">Malattia</span><span class="attivo">Giustificativo</span></div>
+        <div class="destra"><button class="pulsante piatto">Nuova pratica vuota</button></div>
+      </div>
+      <div class="contenuto">
+        <div class="colonne">
+          <div>
+            <div class="scheda">
+              <h2><svg class="i"><use href="#i-mail"/></svg>Mail</h2>
+              <div class="riga-pulsanti">
+                <button class="pulsante"><svg class="i"><use href="#i-mail"/></svg>Importa da Outlook</button>
+                <button class="pulsante"><svg class="i"><use href="#i-incolla"/></svg>Incolla</button>
+                <button class="pulsante"><svg class="i"><use href="#i-selezione"/></svg>Testo selezionato</button>
+                <button class="pulsante"><svg class="i"><use href="#i-ocr"/></svg>OCR zona</button>
+              </div>
+              <div class="mail-meta">Da luca.fittizio@example.com · ricevuta 02/10/2026 16:40 · incollata</div>
+              <textarea class="testo-mail">OGG: Richiesta ferie
+
+Ciao,
+chiedo le ferie dal 9 al 13 ottobre.
+
+Grazie
+Luca Fittizio</textarea>
+              <div class="riga-pulsanti" style="margin-top: var(--s3)">
+                <span style="margin-left:auto"></span>
+                <button class="pulsante primario"><svg class="i"><use href="#i-analizza"/></svg>Analizza <span class="tasto">Ctrl+Invio</span></button>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div class="scheda">
+              <h2><svg class="i"><use href="#i-persona"/></svg>Dipendente</h2>
+              <div class="cerca"><svg class="i"><use href="#i-cerca"/></svg><input placeholder="Cerca per cognome, nome, CF, JobOrder o cliente"></div>
+              <div class="persona scelta">
+                <span class="iniziali">LF</span>
+                <div><div class="nome">Luca Fittizio <span class="origine o-anagrafica">Anagrafica · dal mittente</span></div>
+                  <div class="dettagli">Alfa Srl · JobOrder 201234890 · 01/06/2026 → 31/05/2027</div></div>
+                <button class="pulsante piatto azione">Cambia</button>
+              </div>
+            </div>
+
+            <div class="scheda">
+              <h2><svg class="i"><use href="#i-calendario"/></svg>Richiesta</h2>
+              <div class="campi">
+                <div class="campo"><label>Tipo <span class="origine o-testo">Testo</span> <span class="nota">1</span></label>
+                  <div class="valore"><select><option>Ferie (FER)</option><option>ROL (ROL)</option><option>Permesso visita medica (PVM)</option></select></div></div>
+                <div class="campo"><label>Ore al giorno <span class="origine o-anagrafica">Orario di Alfa Srl</span> <span class="nota">3</span></label>
+                  <div class="valore"><input value="8 h"></div></div>
+              </div>
+              <div class="campo" style="margin-top: var(--s3)"><label>Giorni <span class="origine o-testo">Testo</span></label>
+                <div class="giorni">
+                  <span class="giorno lavorativo">ven 09/10</span>
+                  <span class="giorno escluso">sab 10/10</span>
+                  <span class="giorno escluso">dom 11/10</span>
+                  <span class="giorno lavorativo">lun 12/10</span>
+                  <span class="giorno lavorativo">mar 13/10</span>
+                </div>
+              </div>
+              <div class="avviso info" style="margin-top: var(--s3)">
+                <svg class="i"><use href="#i-calendario"/></svg>
+                <div><span class="testo">Nel periodo ci sono sabato 10 e domenica 11: ora non sono conteggiati.</span><br>
+                  <span class="interruttore" style="margin-top:6px" onclick="this.classList.toggle('acceso')"><span class="binario"></span>Conta anche sabato e domenica</span></div>
+                <span class="nota">2</span>
+              </div>
+            </div>
+
+            <div class="scheda">
+              <h2>Righe da registrare <span class="nota">4</span><span class="destra"><button class="pulsante piatto">Aggiungi riga</button></span></h2>
+              <table>
+                <thead><tr><th>Giorno</th><th>Tipo</th><th>Codice</th><th class="num">Ore</th></tr></thead>
+                <tbody>
+                  <tr><td>ven 09/10/2026</td><td>Ferie</td><td>FER</td><td class="num">8:00</td></tr>
+                  <tr><td>lun 12/10/2026</td><td>Ferie</td><td>FER</td><td class="num">8:00</td></tr>
+                  <tr><td>mar 13/10/2026</td><td>Ferie</td><td>FER</td><td class="num">8:00</td></tr>
+                </tbody>
+                <tfoot><tr><td colspan="3">Totale</td><td class="num">24:00</td></tr></tfoot>
+              </table>
+              <div class="avviso ok" style="margin-top: var(--s3)"><svg class="i"><use href="#i-salva"/></svg><span class="testo">Ferie residue di Luca Fittizio: 40 h. Dopo questa richiesta: 16 h.</span></div>
+            </div>
+
+            <div class="scheda">
+              <div class="riga-pulsanti">
+                <button class="pulsante"><svg class="i"><use href="#i-mail"/></svg>Bozza al lavoratore</button>
+                <button class="pulsante"><svg class="i"><use href="#i-sposta"/></svg>Sposta mail</button>
+                <span style="margin-left:auto"></span>
+                <button class="pulsante primario"><svg class="i"><use href="#i-salva"/></svg>Salva righe</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ ARCHIVIO ============ -->
+    <section class="schermata" id="archivio">
+      <div class="intestazione">
+        <h1>Archivio</h1>
+        <div class="segmenti"><span class="attivo">Malattie</span><span>Giustificativi</span></div>
+        <span class="nota">1</span>
+        <div class="destra"><button class="pulsante"><svg class="i"><use href="#i-scarica"/></svg>Esporta in Excel</button><span class="nota">4</span></div>
+      </div>
+      <div class="contenuto">
+        <div class="filtri">
+          <div class="cerca"><svg class="i"><use href="#i-cerca"/></svg><input placeholder="Cerca dipendente, CF, protocollo, cliente"></div>
+          <select><option>Tutti gli stati</option><option>Incompleta</option><option>Da inviare</option><option>Parziale</option><option>Chiusa</option></select>
+          <span style="color:var(--testo-2)">dal</span><input type="text" value="01/09/2026" size="10">
+          <span style="color:var(--testo-2)">al</span><input type="text" value="31/10/2026" size="10">
+          <span style="margin-left:auto;color:var(--testo-2)">6 pratiche</span>
+        </div>
+        <div class="scheda" style="padding: var(--s2) var(--s3)">
+          <table>
+            <thead><tr><th>Protocollo</th><th>Dipendente</th><th>Cliente</th><th>Dal</th><th>Al</th><th class="num">Giorni</th><th>Stato <span class="nota">2</span></th><th>Ricevuta</th></tr></thead>
+            <tbody>
+              <tr class="selezionata"><td class="mono">412345678</td><td>Anna Esempio</td><td>Alfa Srl</td><td>05/10/2026</td><td>10/10/2026</td><td class="num">6</td><td><span class="badge b-attenzione">Da inviare</span></td><td>07/10/2026 09:12</td></tr>
+              <tr><td class="mono">418765432</td><td>Marco Inventato</td><td>Gamma Srl</td><td>01/10/2026</td><td>02/10/2026</td><td class="num">2</td><td><span class="badge b-ok">Chiusa</span></td><td>01/10/2026 10:03</td></tr>
+              <tr><td class="mono">415551234</td><td>Giulia Simulato</td><td>Beta Spa</td><td>28/09/2026</td><td>04/10/2026</td><td class="num">7</td><td><span class="badge b-info">Parziale</span></td><td>29/09/2026 08:47</td></tr>
+              <tr><td class="mono">—</td><td>Paolo Fantasia</td><td>Delta Coop</td><td>25/09/2026</td><td>—</td><td class="num">—</td><td><span class="badge b-errore">Incompleta</span></td><td>25/09/2026 15:20</td></tr>
+              <tr><td class="mono">413337777</td><td>Sara Ipotetico</td><td>Alfa Srl</td><td>21/09/2026</td><td>23/09/2026</td><td class="num">3</td><td><span class="badge b-ok">Chiusa</span></td><td>21/09/2026 09:30</td></tr>
+              <tr><td class="mono">419990001</td><td>Davide Campione</td><td>Beta Spa</td><td>14/09/2026</td><td>18/09/2026</td><td class="num">5</td><td><span class="badge b-neutro">Chiusa · a mano</span></td><td>14/09/2026 11:02</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="riga-pulsanti">
+          <button class="pulsante">Apri in Nuova pratica</button><span class="nota">3</span>
+          <button class="pulsante">Cambia stato…</button>
+          <button class="pulsante">Storico modifiche</button>
+          <span style="margin-left:auto;color:var(--testo-2);font-size:12px">Doppio clic su una riga = Apri in Nuova pratica</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ STATISTICHE ============ -->
+    <section class="schermata" id="statistiche">
+      <div class="intestazione">
+        <h1>Statistiche</h1>
+        <div class="destra"><select class="pulsante"><option>Ultimi 3 mesi</option><option>Anno in corso</option><option>Tutto</option></select></div>
+      </div>
+      <div class="contenuto">
+        <div class="kpi">
+          <div class="scheda"><div class="numero">48</div><div class="etichetta">Pratiche di malattia</div></div>
+          <div class="scheda"><div class="numero">31</div><div class="etichetta">Dipendenti coinvolti</div></div>
+          <div class="scheda"><div class="numero">212</div><div class="etichetta">Giorni di malattia</div></div>
+          <div class="scheda"><div class="numero">6 min</div><div class="etichetta">Tempo medio di gestione <span class="nota">1</span></div></div>
+        </div>
+        <div class="colonne" style="grid-template-columns: 3fr 2fr">
+          <div class="scheda">
+            <h2>Giorni di malattia per mese <span class="nota">2</span></h2>
+            <div class="barre">
+              <div><b style="height:45%"></b>mag</div><div><b style="height:38%"></b>giu</div><div><b style="height:30%"></b>lug</div>
+              <div><b style="height:22%"></b>ago</div><div><b style="height:70%"></b>set</div><div><b style="height:55%"></b>ott</div>
+            </div>
+          </div>
+          <div class="scheda">
+            <h2>Stato delle pratiche</h2>
+            <div class="orizzontali">
+              <div class="riga"><span>Chiusa</span><span class="traccia"><b style="width:83%;background:var(--ok)"></b></span><span class="num">40</span></div>
+              <div class="riga"><span>Da inviare</span><span class="traccia"><b style="width:8%;background:var(--attenzione-bordo)"></b></span><span class="num">4</span></div>
+              <div class="riga"><span>Parziale</span><span class="traccia"><b style="width:6%;background:var(--accento)"></b></span><span class="num">3</span></div>
+              <div class="riga"><span>Incompleta</span><span class="traccia"><b style="width:2%;background:var(--errore)"></b></span><span class="num">1</span></div>
+            </div>
+            <hr class="separatore">
+            <div style="font-size:12px;color:var(--testo-2)">Episodi oltre 3 giorni: <strong style="color:var(--testo)">17</strong></div>
+          </div>
+        </div>
+        <div class="colonne" style="grid-template-columns: 1fr 1fr">
+          <div class="scheda"><h2>Clienti con più giorni</h2>
+            <table><thead><tr><th>Cliente</th><th class="num">Pratiche</th><th class="num">Giorni</th></tr></thead>
+              <tbody><tr><td>Beta Spa</td><td class="num">17</td><td class="num">81</td></tr><tr><td>Alfa Srl</td><td class="num">15</td><td class="num">64</td></tr><tr><td>Delta Coop</td><td class="num">9</td><td class="num">41</td></tr></tbody></table></div>
+          <div class="scheda"><h2>Dipendenti con più giorni</h2>
+            <table><thead><tr><th>Dipendente</th><th class="num">Pratiche</th><th class="num">Giorni</th></tr></thead>
+              <tbody><tr><td>Giulia Simulato</td><td class="num">3</td><td class="num">19</td></tr><tr><td>Davide Campione</td><td class="num">2</td><td class="num">12</td></tr><tr><td>Anna Esempio</td><td class="num">2</td><td class="num">9</td></tr></tbody></table></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ IMPOSTAZIONI ============ -->
+    <section class="schermata" id="impostazioni">
+      <div class="intestazione"><h1>Impostazioni</h1></div>
+      <div class="contenuto">
+        <div class="impostazioni">
+          <div class="sottomenu">
+            <div class="attiva">Generali</div><div>Anagrafica</div><div>Mail e template</div><div>Regole</div>
+            <div>Tipi di giustificativo</div><div>Vocabolario dei permessi</div><div>OCR e portale INPS</div>
+          </div>
+          <div>
+            <div class="scheda">
+              <h2>Aspetto</h2>
+              <div class="modulo">
+                <label>Tema</label><div class="segmenti" style="justify-self:start"><span>Come Windows</span><span class="attivo">Chiaro</span><span>Scuro</span></div><span></span>
+              </div>
+            </div>
+            <div class="scheda">
+              <h2><svg class="i"><use href="#i-cartella"/></svg>Cartelle e file <span class="nota">1</span></h2>
+              <div class="modulo">
+                <label>Archivio</label><input value="%LOCALAPPDATA%\AssenzeDesk\archivio.db"><button class="pulsante">Sfoglia…</button>
+                <label>Anagrafica (Excel)</label><input value="%LOCALAPPDATA%\AssenzeDesk\anagrafica.xlsx"><button class="pulsante">Sfoglia…</button>
+                <label>Certificati PDF</label><input value="%LOCALAPPDATA%\AssenzeDesk\certificati"><button class="pulsante">Sfoglia…</button>
+                <label>Export Excel</label><input value="%LOCALAPPDATA%\AssenzeDesk\export"><button class="pulsante">Sfoglia…</button>
+                <label>Download del browser</label><input value="%USERPROFILE%\Downloads"><button class="pulsante">Sfoglia…</button>
+              </div>
+            </div>
+            <div class="scheda">
+              <h2>Tipi di giustificativo <span class="nota">2</span><span class="destra"><button class="pulsante piatto">Aggiungi tipo</button></span></h2>
+              <table>
+                <thead><tr><th>Nome</th><th>Codice</th><th>Parole chiave</th><th>A giornata</th></tr></thead>
+                <tbody>
+                  <tr><td>Ferie</td><td class="mono">FER</td><td>ferie, giorno di ferie, chiedo ferie… (5)</td><td>sì</td></tr>
+                  <tr><td>ROL</td><td class="mono">ROL</td><td>rol, permesso orario, uscita anticipata… (17)</td><td>no</td></tr>
+                  <tr><td>Permesso visita medica</td><td class="mono">PVM</td><td>visita medica, visita specialistica… (8)</td><td>no</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="piede">
+              <span class="nota-file">Salvate in %LOCALAPPDATA%\AssenzeDesk\impostazioni.json <span class="nota">3</span></span>
+              <button class="pulsante">Annulla modifiche</button>
+              <button class="pulsante primario"><svg class="i"><use href="#i-salva"/></svg>Salva</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="log" id="log">
+      <div class="titolo" onclick="this.parentElement.classList.toggle('chiuso')"><svg class="i"><use href="#i-log"/></svg>Log <span class="nota">L</span><span style="margin-left:auto">clic per chiudere o aprire</span></div>
+<pre>09:12:04  Mail importata da Outlook (ricevuta 07/10/2026 09:12)
+09:12:04  Analisi: protocollo dal testo, JobOrder dal testo
+09:12:05  Certificato letto da 412345678.pdf: CF OUB************B, dal 05/10 al 09/10
+09:12:31  "Al" modificato a mano: l'analisi non lo cambierà più</pre>
+    </div>
+  </div>
+</div>
+
+<div class="note">
+  <div class="gruppo visibile" data-note="malattia">
+    <h3>Nuova pratica · Malattia</h3>
+    <ol>
+      <li><span class="nota">1</span>Malattia o Giustificativo si sceglie con l'interruttore nella schermata, mai con una finestra.</li>
+      <li><span class="nota">2</span>Il testo arriva da Outlook, dagli appunti, dal testo selezionato in un'altra finestra o dall'OCR di una zona dello schermo. L'analisi parte con Analizza o Ctrl+Invio, oppure subito dopo un import o un incolla: mai mentre scrivi.</li>
+      <li><span class="nota">3</span>Ogni campo dice da dove viene il dato: Testo, PDF, Anagrafica o Manuale.</li>
+      <li><span class="nota">4</span>Un campo cambiato a mano diventa "Manuale": l'analisi non lo sovrascrive più. Sotto resta il valore automatico, con "Ripristina".</li>
+      <li><span class="nota">5</span>Un dato incerto resta vuoto, con il bordo giallo e il motivo scritto sotto: meglio vuoto che sbagliato.</li>
+      <li><span class="nota">6</span>Dipendente: ricerca e suggeriti nella stessa schermata, con cliente e periodo del JobOrder. Si può sempre scegliere a mano, anche senza anagrafica. Uguale nel flusso Giustificativo.</li>
+      <li><span class="nota">7</span>Assistente INPS dentro la schermata: apre il portale e ti fa copiare CF e protocollo; il codice di controllo lo inserisci tu. "Ho scaricato il PDF" lo trova nei Download, lo archivia con il nome del protocollo e lo legge. Se ne trova più di uno, scegli tu dall'elenco.</li>
+      <li><span class="nota">8</span>Le mail restano sempre bozze. "Bozza all'ufficio" si attiva solo se l'episodio supera 3 giorni e allega i PDF di tutti i certificati dell'episodio.</li>
+      <li><span class="nota">D</span>In modalità demo l'app parte con anagrafica, mail e certificati finti; i pulsanti di Outlook caricano una mail finta.</li>
+      <li><span class="nota">L</span>Il log sta in un pannello richiudibile; il codice fiscale vi compare sempre mascherato.</li>
+    </ol>
+  </div>
+  <div class="gruppo" data-note="giustificativo">
+    <h3>Nuova pratica · Giustificativo</h3>
+    <ol>
+      <li><span class="nota">1</span>Se nella mail trova più tipi (per esempio "ferie" e "visita medica") il campo resta vuoto e scegli tu tra quelli trovati.</li>
+      <li><span class="nota">2</span>Sabato e domenica nel periodo: al posto del popup, un avviso con interruttore nella schermata. Di base non sono conteggiati; se accendi l'interruttore diventano righe con le ore dell'orario del cliente per quel giorno.</li>
+      <li><span class="nota">3</span>Ore: per le ferie quelle dell'orario del cliente; per i permessi quelle scritte nella mail. "Mattina" o "pomeriggio" propongono le ore del turno, da confermare.</li>
+      <li><span class="nota">4</span>Una riga per giorno, modificabile prima di salvare. Se la richiesta supera le ore residue compare un avviso giallo (non blocca il salvataggio).</li>
+    </ol>
+  </div>
+  <div class="gruppo" data-note="archivio">
+    <h3>Archivio</h3>
+    <ol>
+      <li><span class="nota">1</span>Malattie e giustificativi nella stessa sezione, con ricerca e filtri per stato e periodo.</li>
+      <li><span class="nota">2</span>Lo stato si calcola dalle regole; uno stato messo a mano resta com'è ed è indicato ("a mano").</li>
+      <li><span class="nota">3</span>"Apri in Nuova pratica" (o doppio clic) riapre la pratica per completarla: il cambio di schermata lo decidi tu.</li>
+      <li><span class="nota">4</span>"Esporta in Excel" esporta quello che vedi con i filtri attuali.</li>
+    </ol>
+  </div>
+  <div class="gruppo" data-note="statistiche">
+    <h3>Statistiche</h3>
+    <ol>
+      <li><span class="nota">1</span>Tempo medio di gestione senza i valori anomali (oltre la media + 10 minuti, ricalcolato più volte).</li>
+      <li><span class="nota">2</span>Grafici semplici disegnati dall'app, senza librerie esterne.</li>
+    </ol>
+  </div>
+  <div class="gruppo" data-note="impostazioni">
+    <h3>Impostazioni</h3>
+    <ol>
+      <li><span class="nota">1</span>Tutto quello che nella v6.20 era scritto nel codice: cartelle, mail dell'ufficio, regole di protocollo e JobOrder, soglia, template, OCR, portale INPS.</li>
+      <li><span class="nota">2</span>Tipi di giustificativo modificabili: nome, codice, parole chiave e se valgono a giornata. I codici qui sono solo esempi.</li>
+      <li><span class="nota">3</span>Un solo file JSON nella cartella dell'utente, mai nel repo. "Annulla modifiche" torna all'ultimo salvataggio.</li>
+    </ol>
+  </div>
+</div>
+
+<script>
+  const schermate = ["malattia", "giustificativo", "archivio", "statistiche", "impostazioni"];
+  function vai(nome) {
+    schermate.forEach(s => document.getElementById(s).classList.toggle("visibile", s === nome));
+    document.querySelectorAll(".barra-mockup [data-vai]").forEach(b => b.classList.toggle("attivo", b.dataset.vai === nome));
+    const sezione = nome === "malattia" || nome === "giustificativo" ? "nuova" : nome;
+    document.querySelectorAll(".voce").forEach(v => v.classList.toggle("attiva", v.dataset.sezione === sezione));
+    document.querySelectorAll(".note .gruppo").forEach(g => g.classList.toggle("visibile", g.dataset.note === nome));
+  }
+  function tema(nome) {
+    const effettivo = nome === "sistema"
+      ? (matchMedia("(prefers-color-scheme: dark)").matches ? "scuro" : "chiaro") : nome;
+    document.body.dataset.tema = effettivo;
+    document.querySelectorAll("[data-tema-mockup]").forEach(b => b.classList.toggle("attivo", b.dataset.temaMockup === nome));
+  }
+  document.querySelectorAll("[data-vai]").forEach(el => el.addEventListener("click", () => vai(el.dataset.vai)));
+  document.querySelectorAll("[data-tema-mockup]").forEach(el => el.addEventListener("click", () => tema(el.dataset.temaMockup)));
+</script>
+</body>
+</html>
