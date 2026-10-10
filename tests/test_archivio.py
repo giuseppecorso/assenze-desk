@@ -125,6 +125,16 @@ def test_elenco_pratiche_con_filtri(archivio):
     assert [p.protocollo for p in archivio.pratiche(stato=Stato.DA_INVIARE)] == ["411111111"]
 
 
+def test_stato_con_la_soglia_delle_impostazioni(orologio):
+    lunga = pratica(giorni_episodio=4, mail_lavoratore=True)
+    assert lunga.stato is Stato.PARZIALE  # soglia predefinita: 3 giorni
+    assert lunga.stato_per(soglia_ufficio=5) is Stato.CHIUSA
+    with Archivio(":memory:", adesso=orologio, soglia_ufficio=5) as archivio:
+        archivio.salva_pratica(lunga)
+        assert [p.protocollo for p in archivio.pratiche(stato=Stato.CHIUSA)] == ["411111111"]
+        assert archivio.pratiche(stato=Stato.PARZIALE) == []
+
+
 def test_certificati_per_l_episodio(archivio):
     archivio.salva_pratica(pratica("411111111", inizio=date(2026, 10, 1), fine=date(2026, 10, 3)))
     archivio.salva_pratica(pratica("422222222", inizio=date(2026, 10, 4), fine=date(2026, 10, 6)))

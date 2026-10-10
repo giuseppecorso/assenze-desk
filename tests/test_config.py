@@ -7,6 +7,7 @@ import pytest
 
 from assenze_desk.adapters.inps import URL_PORTALE_INPS
 from assenze_desk.config import (
+    CartelleOutlook,
     Ocr,
     carica_impostazioni,
     cartella_dati_predefinita,
@@ -137,6 +138,24 @@ def test_voci_di_ocr_e_portale_inps(tmp_path, cartella):
     assert carica_impostazioni(file, cartella) == (imp, [])
 
 
+def test_voci_dell_interfaccia(tmp_path, cartella):
+    imp = impostazioni_predefinite(cartella)
+    assert imp.tema == "sistema"
+    assert imp.posta == "outlook"
+    assert imp.cartelle_outlook == CartelleOutlook(malattie="", giustificativi="")
+
+    file = scrivi(
+        tmp_path,
+        {"tema": "scuro", "posta": "mailto", "cartelle_outlook": {"malattie": "Gestite/Malattie"}},
+    )
+    imp, avvisi = carica_impostazioni(file, cartella)
+    assert avvisi == []
+    assert (imp.tema, imp.posta) == ("scuro", "mailto")
+    assert imp.cartelle_outlook == CartelleOutlook("Gestite/Malattie", "")
+    salva_impostazioni(imp, file)
+    assert carica_impostazioni(file, cartella) == (imp, [])
+
+
 def test_voce_sconosciuta_avviso(tmp_path, cartella):
     _imp, avvisi = carica_impostazioni(scrivi(tmp_path, {"voce_inventata": 1}), cartella)
     assert avvisi == ["Voce sconosciuta ignorata: voce_inventata"]
@@ -154,6 +173,9 @@ def test_voce_sconosciuta_avviso(tmp_path, cartella):
         ({"portale_inps": "portale.example"}, "portale_inps"),
         ({"ocr": {"parole_rumore": "intranet"}}, "ocr"),
         ({"ocr": {"tesseract": 5}}, "ocr"),
+        ({"tema": "blu"}, "tema"),
+        ({"posta": "piccione"}, "posta"),
+        ({"cartelle_outlook": {"malattie": 3}}, "cartelle_outlook"),
     ],
 )
 def test_valore_non_valido_errore_con_la_voce(tmp_path, cartella, contenuto, voce):

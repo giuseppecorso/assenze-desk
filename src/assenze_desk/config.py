@@ -37,6 +37,19 @@ class Ocr:
 
 
 @dataclass(frozen=True)
+class CartelleOutlook:
+    """Dove spostare le mail gestite: "Gestite/Malattie" (dentro la Posta in arrivo) o
+    un percorso completo. Vuoto = pulsante "Sposta mail" disattivato."""
+
+    malattie: str = ""
+    giustificativi: str = ""
+
+
+TEMI = ("sistema", "chiaro", "scuro")
+POSTA = ("outlook", "mailto")
+
+
+@dataclass(frozen=True)
 class MailUfficio:
     destinatari: tuple[str, ...] = ()
     copia: tuple[str, ...] = ()
@@ -87,6 +100,9 @@ class Impostazioni:
     spunte_prima_della_voce: bool | None = None
     portale_inps: str = URL_PORTALE_INPS
     ocr: Ocr = Ocr()
+    tema: str = "sistema"  # sistema, chiaro, scuro
+    posta: str = "outlook"  # outlook (Outlook Classic) oppure mailto (programma predefinito)
+    cartelle_outlook: CartelleOutlook = CartelleOutlook()
 
 
 def cartella_dati_predefinita() -> Path:
@@ -243,6 +259,27 @@ def _ocr(valore: Any, predefinite: Impostazioni, _cartella: Path):
     return "ocr", Ocr(tesseract=tesseract, parole_rumore=_testi(rumore))
 
 
+def _scelta(nome: str, ammesse: tuple[str, ...]):
+    def converti(valore: Any, _predefinite: Impostazioni, _cartella: Path):
+        if valore not in ammesse:
+            raise ValueError(f"valori ammessi: {', '.join(ammesse)}")
+        return nome, valore
+
+    return converti
+
+
+def _cartelle_outlook(valore: Any, predefinite: Impostazioni, _cartella: Path):
+    attuali = {
+        "malattie": predefinite.cartelle_outlook.malattie,
+        "giustificativi": predefinite.cartelle_outlook.giustificativi,
+    }
+    for nome, testo in valore.items():
+        if nome not in attuali or not isinstance(testo, str):
+            raise ValueError(f"cartella non valida: {nome}")
+        attuali[nome] = testo
+    return "cartelle_outlook", CartelleOutlook(**attuali)
+
+
 def _template(valore: Any, predefinite: Impostazioni, _cartella: Path):
     nomi = {f.name for f in fields(Template)}
     testi = {
@@ -266,6 +303,9 @@ _CONVERSIONI = {
     "spunte_prima_della_voce": _spunte,
     "portale_inps": _portale,
     "ocr": _ocr,
+    "tema": _scelta("tema", TEMI),
+    "posta": _scelta("posta", POSTA),
+    "cartelle_outlook": _cartelle_outlook,
 }
 
 
@@ -304,6 +344,12 @@ def _in_dizionario(imp: Impostazioni) -> dict[str, Any]:
         "spunte_prima_della_voce": imp.spunte_prima_della_voce,
         "portale_inps": imp.portale_inps,
         "ocr": {"tesseract": imp.ocr.tesseract, "parole_rumore": list(imp.ocr.parole_rumore)},
+        "tema": imp.tema,
+        "posta": imp.posta,
+        "cartelle_outlook": {
+            "malattie": imp.cartelle_outlook.malattie,
+            "giustificativi": imp.cartelle_outlook.giustificativi,
+        },
     }
 
 

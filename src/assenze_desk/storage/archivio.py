@@ -16,7 +16,7 @@ from typing import Any, Self
 
 from assenze_desk.core.episodio import Certificato
 from assenze_desk.core.privacy import maschera_cf
-from assenze_desk.core.stato import Stato, calcola_stato
+from assenze_desk.core.stato import SOGLIA_UFFICIO, Stato, calcola_stato
 
 VERSIONE_SCHEMA = 1
 
@@ -86,6 +86,10 @@ class Pratica:
 
     @property
     def stato(self) -> Stato:
+        return self.stato_per(SOGLIA_UFFICIO)
+
+    def stato_per(self, soglia_ufficio: int) -> Stato:
+        """Lo stato con la soglia della mail all'ufficio scelta nelle impostazioni."""
         return calcola_stato(
             protocollo=self.protocollo,
             cf=self.cf,
@@ -95,6 +99,7 @@ class Pratica:
             mail_ufficio=self.mail_ufficio,
             giorni_episodio=self.giorni_episodio,
             stato_manuale=self.stato_manuale,
+            soglia_ufficio=soglia_ufficio,
         )
 
 
@@ -130,12 +135,18 @@ _CAMPI_RIGA_MODIFICABILI = {"giorno", "tipo", "codice", "minuti"}
 
 
 class Archivio:
-    def __init__(self, percorso: Path | str, adesso: Callable[[], datetime] = datetime.now) -> None:
+    def __init__(
+        self,
+        percorso: Path | str,
+        adesso: Callable[[], datetime] = datetime.now,
+        soglia_ufficio: int = SOGLIA_UFFICIO,
+    ) -> None:
         if str(percorso) != ":memory:":
             Path(percorso).parent.mkdir(parents=True, exist_ok=True)
         self._db = sqlite3.connect(str(percorso))
         self._db.row_factory = sqlite3.Row
         self._adesso = adesso
+        self.soglia_ufficio = soglia_ufficio
         with self._db:
             self._db.executescript(_SCHEMA)
             self._db.execute(f"PRAGMA user_version = {VERSIONE_SCHEMA}")
@@ -202,7 +213,7 @@ class Archivio:
                 (cf.strip().upper(),),
             )
         pratiche = [_pratica(riga) for riga in righe]
-        return [p for p in pratiche if stato is None or p.stato is stato]
+        return [p for p in pratiche if stato is None or p.stato_per(self.soglia_ufficio) is stato]
 
     def certificati(self, cf: str) -> list[Certificato]:
         """Le pratiche del CF con le date, come certificati per calcolare l'episodio."""
