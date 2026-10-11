@@ -80,7 +80,11 @@ protocolli sono inventati.
 
 ## Provarlo
 
-Servono Windows e Python 3.14.
+**Senza installare Python:** scarica lo zip per Windows dalla pagina
+[Releases](https://github.com/giuseppecorso/assenze-desk/releases), estrai la
+cartella e avvia `AssenzeDesk.exe --demo` dal prompt dei comandi.
+
+**Dal codice:** servono Windows e Python 3.14.
 
 ```powershell
 git clone https://github.com/giuseppecorso/assenze-desk.git
@@ -101,6 +105,9 @@ Facoltativi:
   italiana per l'OCR.
 
 Per lo sviluppo: `pip install -e ".[dev]"`, poi `pytest` e `ruff check`.
+La versione senza Python si crea con `pip install -e ".[exe]"` e
+`python scripts/crea_eseguibile.py`; con un tag `v*` la crea la CI, insieme
+alla bozza della release.
 
 ## Architettura
 

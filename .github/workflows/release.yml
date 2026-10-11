@@ -1,0 +1,37 @@
+# Quando si pubblica un tag v* (per esempio v1.0.0): test, versione per Windows
+# senza Python e bozza di release su GitHub con lo zip allegato.
+# La release resta una bozza: la pubblica l'autore dopo averla controllata.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  eseguibile:
+    name: Versione per Windows
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+          cache: pip
+      - run: pip install -e ".[dev,exe]"
+      - run: pytest
+      - run: python scripts/crea_eseguibile.py
+      - name: Zip della cartella
+        shell: pwsh
+        run: Compress-Archive -Path dist/AssenzeDesk -DestinationPath "AssenzeDesk-${{ github.ref_name }}-windows.zip"
+      - name: Bozza di release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
+        run: >
+          gh release create "${{ github.ref_name }}" "AssenzeDesk-${{ github.ref_name }}-windows.zip"
+          --draft --title "Assenze Desk ${{ github.ref_name }}" --notes-file docs/release-notes.md

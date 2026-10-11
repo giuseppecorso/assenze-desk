@@ -41,6 +41,8 @@ dev = [
     "ruff==0.16.10",
     "pre-commit>=4.6",
 ]
+# Versione per Windows senza Python: pip install -e ".[exe]"
+exe = ["pyinstaller>=6.16"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
