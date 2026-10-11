@@ -133,6 +133,17 @@ def test_le_icone_nelle_caselle_cambiano_con_il_tema(app, qtbot):
 # --- Avvisi nelle schermate ---
 
 
+def test_una_data_impossibile_si_segnala_e_sparisce_con_la_pratica_vuota(finestra, qtbot):
+    pagina = finestra.nuova_pratica
+    fine = pagina.malattia.campi["fine"]
+    scrivi_data(qtbot, fine, "110/10/2026")
+    assert "Data non valida" in fine.avviso.text()
+    assert fine.editor.property("incerto")
+    pagina.nuova_vuota()
+    assert fine.editor.text() == ""
+    assert not fine.avviso.isVisibleTo(fine)
+
+
 def test_malattia_avvisa_della_fine_prima_dell_inizio_e_dell_anno(finestra, qtbot):
     malattia = finestra.nuova_pratica.malattia
     inizio, fine = malattia.campi["inizio"], malattia.campi["fine"]

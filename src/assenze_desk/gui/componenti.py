@@ -426,7 +426,7 @@ class CampoDato(QWidget):
         if isinstance(editor, QComboBox):
             posizione = editor.findData(campo.valore) if campo.valore is not None else 0
             editor.setCurrentIndex(max(posizione, 0))
-        elif self.valore_da_testo(editor.text()) != campo.valore:
+        elif self._da_riscrivere(campo):
             editor.setText(self.testo_da_valore(campo.valore))
             self._errore_locale = ""
 
@@ -442,6 +442,23 @@ class CampoDato(QWidget):
             self.automatico.setText(f"Automatico: {self.testo_da_valore(campo.proposta.valore)}")
         self._riga_automatico.setVisible(campo.automatico_diverso)
         self._mostra_rapide(campo.scelte if campo.valore is None else ())
+
+    def _da_riscrivere(self, campo: Campo) -> bool:
+        """Il testo scritto a mano resta com'è (anche "12/10" o una data sbagliata,
+        con il suo avviso) finché il core non porta un valore diverso; negli altri
+        casi la casella mostra il valore del core."""
+        editor = self.editor
+        if not isinstance(editor, QLineEdit):
+            return False
+        if campo.manuale or self._errore_locale:
+            return self.valore_da_testo(editor.text()) != campo.valore
+        return editor.text() != self.testo_da_valore(campo.valore)
+
+    def pulisci(self) -> None:
+        """Pratica nuova: via anche il testo non valido scritto a mano."""
+        self._errore_locale = ""
+        if isinstance(self.editor, QLineEdit):
+            self.editor.clear()
 
     def _mostra_rapide(self, scelte: tuple) -> None:
         if scelte == self._scelte_rapide:

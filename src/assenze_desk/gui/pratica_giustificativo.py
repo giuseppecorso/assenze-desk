@@ -348,6 +348,8 @@ class PraticaGiustificativo(QWidget):
     def svuota(self) -> None:
         self.modulo.svuota()
         self.scelta.svuota()
+        for campo in self.campi.values():
+            campo.pulisci()
         self._info, self._motivo, self._salvate = InfoMail(), "", False
         self.conta_weekend.setChecked(False)
         self._ridisegna()

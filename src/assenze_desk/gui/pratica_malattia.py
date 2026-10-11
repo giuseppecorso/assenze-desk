@@ -482,6 +482,8 @@ class PraticaMalattia(QWidget):
     def svuota(self) -> None:
         self.modulo.svuota()
         self.scelta.svuota()
+        for campo in self.campi.values():
+            campo.pulisci()
         self._base, self._info, self._testo, self._motivo = {}, InfoMail(), "", ""
         self._pdf = self._dati_pdf = None
         self._mail_lavoratore = self._mail_ufficio = False
