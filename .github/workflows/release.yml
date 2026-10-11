@@ -1,11 +1,13 @@
 # Quando si pubblica un tag v* (per esempio v1.0.0): test, versione per Windows
 # senza Python e bozza di release su GitHub con lo zip allegato.
 # La release resta una bozza: la pubblica l'autore dopo averla controllata.
+# Avviato a mano (Actions → Release → Run workflow) crea solo lo zip, come prova.
 name: Release
 
 on:
   push:
     tags: ["v*"]
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -28,7 +30,15 @@ jobs:
       - name: Zip della cartella
         shell: pwsh
         run: Compress-Archive -Path dist/AssenzeDesk -DestinationPath "AssenzeDesk-${{ github.ref_name }}-windows.zip"
+      - name: Zip da scaricare (avvio a mano)
+        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: AssenzeDesk-prova-windows
+          path: AssenzeDesk-*-windows.zip
+          retention-days: 7
       - name: Bozza di release
+        if: ${{ startsWith(github.ref, 'refs/tags/') }}
         env:
           GH_TOKEN: ${{ github.token }}
         shell: pwsh
