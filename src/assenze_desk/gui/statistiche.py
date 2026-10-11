@@ -15,6 +15,7 @@ from PySide6.QtWidgets import (
     QComboBox,
     QGridLayout,
     QHeaderView,
+    QSizePolicy,
     QTableWidget,
     QTableWidgetItem,
     QVBoxLayout,
@@ -44,6 +45,8 @@ class GraficoBarre(QWidget):
     def __init__(self) -> None:
         super().__init__()
         self.setMinimumHeight(190)
+        # Il grafico riempie la scheda: il titolo resta in alto
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.valori: list[tuple[str, int]] = []
 
     def imposta(self, valori: Sequence[tuple[str, int]]) -> None:

@@ -6,7 +6,9 @@ definiscono una volta qui: le schermate indicano solo il ruolo di un widget
 disegnati a mano (interruttore, grafici) leggono i colori con `colore()`.
 """
 
+import tempfile
 from collections.abc import Mapping
+from pathlib import Path
 from string import Template
 
 from PySide6.QtCore import Qt
@@ -156,6 +158,8 @@ QLineEdit[incerto="true"], QComboBox[incerto="true"] {
     border-color: $attenzione_bordo; background: $attenzione_tenue;
 }
 QLineEdit[mono="true"] { font-family: "Cascadia Mono", Consolas, monospace; }
+QComboBox::drop-down { border: none; background: transparent; width: 22px; }
+$freccia
 QComboBox QAbstractItemView {
     background: $superficie; border: 1px solid $bordo; selection-background-color: $accento_tenue;
     selection-color: $testo;
@@ -234,7 +238,8 @@ QCalendarWidget QSpinBox { padding: 2px 4px; }
 )
 
 
-def foglio_di_stile(colori: Mapping[str, str]) -> str:
+def foglio_di_stile(colori: Mapping[str, str], freccia: str = "") -> str:
+    """Il QSS del tema; `freccia` è il file dell'icona dei menu a tendina."""
     origini = "\n".join(
         f'QLabel[origine="{nome}"] {{ color: {colori[testo]}; background: {colori[sfondo]}; }}'
         for nome, (testo, sfondo) in COLORI_ORIGINE.items()
@@ -250,6 +255,11 @@ def foglio_di_stile(colori: Mapping[str, str]) -> str:
         r2=RAGGIO_GRANDE,
         origini=origini,
         stati=stati,
+        freccia=(
+            f"QComboBox::down-arrow {{ image: url({freccia}); width: 12px; height: 12px; }}"
+            if freccia
+            else ""
+        ),
     )
 
 
@@ -288,10 +298,25 @@ def applica_tema(app: QApplication, scelta: str) -> str:
     palette = _palette(colori)
     if app.palette() != palette:
         app.setPalette(palette)
-    qss = foglio_di_stile(colori)
+    qss = foglio_di_stile(colori, _freccia(colori["testo_2"]))
     if app.styleSheet() != qss:
         app.setStyleSheet(qss)
     return nome
+
+
+def _freccia(colore: str) -> str:
+    """La freccia dei menu a tendina come file SVG: il QSS accetta immagini solo da file."""
+    cartella = Path(tempfile.gettempdir()) / "assenze-desk"
+    cartella.mkdir(exist_ok=True)
+    file = cartella / f"freccia-{colore.lstrip('#')}.svg"
+    if not file.is_file():
+        file.write_text(
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" '
+            f'stroke="{colore}" stroke-width="2.2" stroke-linecap="round" '
+            'stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>',
+            encoding="utf-8",
+        )
+    return file.as_posix()
 
 
 def aggiorna_stile(widget: QWidget) -> None:
