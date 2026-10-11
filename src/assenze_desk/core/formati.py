@@ -4,7 +4,7 @@ import re
 from collections.abc import Sequence
 from datetime import date, timedelta
 
-from assenze_desk.core.date import trova_date
+from assenze_desk.core.date import leggi_elenco_date
 from assenze_desk.core.ore import leggi_durata
 
 GIORNI_BREVI = ("lun", "mar", "mer", "gio", "ven", "sab", "dom")
@@ -37,9 +37,13 @@ def leggi_ore(testo: str) -> int | None:
     return leggi_durata(pulito) if pulito else None
 
 
-def leggi_giorni(testo: str, riferimento: date) -> tuple[date, ...]:
-    """Date scritte a mano, separate da virgole o spazi; senza anno vale la più vicina."""
-    return tuple(sorted(set(trova_date(testo, riferimento))))
+def leggi_giorni(testo: str, riferimento: date) -> tuple[date, ...] | None:
+    """Date scritte a mano, separate da virgole o spazi; senza anno vale la più vicina.
+
+    None se una parte non è una data: nel campo compare l'avviso.
+    """
+    lette = leggi_elenco_date(testo, riferimento)
+    return None if lette is None else tuple(sorted(set(lette)))
 
 
 def elenco_giorni(giorni: Sequence[date]) -> str:

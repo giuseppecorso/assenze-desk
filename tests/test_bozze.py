@@ -46,6 +46,26 @@ def test_giorni_scritti_a_mano():
         date(2026, 10, 13),
     )
     assert formati.leggi_giorni("", date(2026, 10, 2)) == ()
+    assert formati.leggi_giorni("12 ottobre 2026 e 13/10", date(2026, 10, 2)) == (
+        date(2026, 10, 12),
+        date(2026, 10, 13),
+    )
+
+
+@pytest.mark.parametrize(
+    "scritto",
+    [
+        "12/10/2026, 40/10/2026",  # una data che non esiste
+        "12/10/2026, 31/02/2026",
+        "12/10/2026 pippo",  # testo che non è una data
+        "12/10/2026, 9.30",  # orario, non data
+        "domani",
+        "dal 12/10/2026 al 16/10/2026",  # un periodo: si sceglie dal calendario
+    ],
+)
+def test_giorni_con_una_parte_non_valida(scritto):
+    # Nessuna parte si scarta in silenzio: il campo dice che non è valido
+    assert formati.leggi_giorni(scritto, date(2026, 10, 2)) is None
 
 
 def test_elenco_dei_giorni_per_la_mail():

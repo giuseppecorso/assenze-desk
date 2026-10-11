@@ -5,9 +5,9 @@ Il colore viene dal tema attivo. Un pulsante con icona ha la property "icona"
 """
 
 from PySide6.QtCore import QByteArray, QRectF, QSize, Qt
-from PySide6.QtGui import QIcon, QPainter, QPixmap
+from PySide6.QtGui import QAction, QIcon, QPainter, QPixmap
 from PySide6.QtSvg import QSvgRenderer
-from PySide6.QtWidgets import QAbstractButton, QLabel, QWidget
+from PySide6.QtWidgets import QAbstractButton, QLabel, QLineEdit, QWidget
 
 from assenze_desk.gui import tema
 
@@ -54,6 +54,8 @@ TRATTI = {
         '<path d="M10 13h6M13 10l3 3-3 3"/>'
     ),
     "chiudi": '<path d="M6 6l12 12M18 6L6 18"/>',
+    "indietro": '<path d="M15 6l-6 6 6 6"/>',
+    "avanti": '<path d="M9 6l6 6-6 6"/>',
     "elimina": '<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>',
 }
 LATO = 16
@@ -95,6 +97,16 @@ def metti(widget: QAbstractButton, nome: str, ruolo: str = "testo", ruolo_attivo
     widget.setIconSize(QSize(LATO, LATO))
 
 
+def in_casella(
+    casella: QLineEdit, nome: str, posizione: QLineEdit.ActionPosition, ruolo: str = "testo_2"
+) -> QAction:
+    """Icona dentro una casella di testo (lente, calendario), ricolorata al cambio di tema."""
+    azione = casella.addAction(icona(nome, ruolo), posizione)
+    azione.setProperty("icona", nome)
+    azione.setProperty("icona_ruolo", ruolo)
+    return azione
+
+
 def etichetta(nome: str, ruolo: str = "testo_2") -> QLabel:
     """Un'icona da sola, per esempio accanto al titolo di una scheda."""
     label = QLabel()
@@ -107,6 +119,10 @@ def etichetta(nome: str, ruolo: str = "testo_2") -> QLabel:
 def ricolora(radice: QWidget) -> None:
     """Ridisegna tutte le icone sotto `radice` con i colori del tema attivo."""
     for widget in [radice, *radice.findChildren(QWidget)]:
+        if isinstance(widget, QLineEdit):
+            for azione in widget.actions():
+                if azione.property("icona"):
+                    azione.setIcon(icona(azione.property("icona"), azione.property("icona_ruolo")))
         nome = widget.property("icona")
         if not nome:
             continue

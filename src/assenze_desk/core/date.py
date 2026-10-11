@@ -72,6 +72,27 @@ def trova_date(testo: str, riferimento: date | None = None, giorni_avanti: int =
     return trovate
 
 
+_SEPARATORI = re.compile(r"(?:[\s,;]|\be\b)*", re.IGNORECASE)
+
+
+def leggi_elenco_date(valore: str, riferimento: date | None = None) -> list[date] | None:
+    """Solo date, separate da virgole, spazi o "e"; None se una parte non è una data.
+
+    Per un campo compilato a mano: niente si scarta in silenzio (31/02, parole, orari).
+    """
+    lette: list[date] = []
+    inizio_avanzo = 0
+    for corrispondenza in _DATA.finditer(valore):
+        if not _SEPARATORI.fullmatch(valore[inizio_avanzo : corrispondenza.start()]):
+            return None
+        data = _converti(corrispondenza, riferimento, 0)
+        if data is None:
+            return None
+        lette.append(data)
+        inizio_avanzo = corrispondenza.end()
+    return lette if _SEPARATORI.fullmatch(valore[inizio_avanzo:]) else None
+
+
 def _converti(trovata: re.Match[str], riferimento: date | None, giorni_avanti: int) -> date | None:
     parti = trovata.groupdict()
     if parti["iso_anno"]:

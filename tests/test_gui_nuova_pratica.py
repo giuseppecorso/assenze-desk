@@ -133,6 +133,7 @@ def test_un_campo_scritto_a_mano_resta_dopo_una_nuova_analisi(finestra, qtbot):
     campo = pagina.malattia.campi["fine"]
     campo.editor.clear()
     qtbot.keyClicks(campo.editor, "10/10/2026")
+    qtbot.keyClick(campo.editor, Qt.Key.Key_Return)
     pagina.analizza()
     assert pagina.malattia.modulo["fine"].valore == date(2026, 10, 10)
     assert campo.origine.text() == "Manuale"

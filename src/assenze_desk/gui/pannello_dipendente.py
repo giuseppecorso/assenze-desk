@@ -52,9 +52,7 @@ class PannelloDipendente(Scheda):
 
         self.cerca = QLineEdit()
         self.cerca.setPlaceholderText("Cerca per cognome, nome, CF, JobOrder o cliente")
-        self.cerca.addAction(
-            icone.icona("cerca", "testo_2"), QLineEdit.ActionPosition.LeadingPosition
-        )
+        icone.in_casella(self.cerca, "cerca", QLineEdit.ActionPosition.LeadingPosition)
         self.cerca.textChanged.connect(self._cerca)
         self.corpo.addWidget(self.cerca)
         self.risultati = self._elenco()

@@ -28,6 +28,7 @@ from assenze_desk.core import formati
 from assenze_desk.core.campi import Campo, Origine
 from assenze_desk.core.date import leggi_data
 from assenze_desk.gui import icone, tema
+from assenze_desk.gui.calendario import aggiungi_calendario
 
 S1, S2, S3, S4, S5 = tema.SPAZIO
 
@@ -272,8 +273,9 @@ class CampoDato(QWidget):
     """Un campo della pratica: etichetta con l'origine, casella, avviso, ripristino.
 
     Tipi: "testo", "data" (gg/mm/aaaa), "ore" ("1:30"), "giorni" (date separate
-    da virgole), "scelta" (elenco). Il valore scritto dall'utente arriva con
-    `modificato`; ciò che si mostra arriva sempre dal core con `mostra`.
+    da virgole), "scelta" (elenco). Date e giorni hanno il mini calendario. Il
+    valore scritto dall'utente arriva con `modificato`; ciò che si mostra arriva
+    sempre dal core con `mostra`.
     """
 
     modificato = Signal(str, object)
@@ -288,6 +290,7 @@ class CampoDato(QWidget):
         mono: bool = False,
         segnaposto: str = "",
         riferimento: Callable[[], date] = date.today,
+        oggi: Callable[[], date] = date.today,
     ) -> None:
         super().__init__()
         self.nome, self.tipo = nome, tipo
@@ -307,10 +310,24 @@ class CampoDato(QWidget):
             self.imposta_scelte(scelte)
             self.editor.activated.connect(self._scelta_utente)
         else:
-            self.editor = QLineEdit()
-            self.editor.setPlaceholderText(segnaposto)
-            self.editor.setProperty("mono", mono)
-            self.editor.textEdited.connect(self._testo_utente)
+            casella = QLineEdit()
+            casella.setPlaceholderText(segnaposto)
+            casella.setProperty("mono", mono)
+            if tipo == "testo":
+                casella.textEdited.connect(self._testo_utente)
+            else:
+                # Date e ore valgono con Invio o uscendo dalla casella: mentre si
+                # scrive "12/10/20" non compaiono avvisi su una data a metà
+                casella.editingFinished.connect(lambda: self._testo_utente(casella.text()))
+            if tipo in ("data", "giorni"):
+                aggiungi_calendario(
+                    casella,
+                    self._giorni_scritti,
+                    oggi,
+                    self._dal_calendario,
+                    multipli=tipo == "giorni",
+                )
+            self.editor = casella
         layout.addWidget(self.editor)
 
         self.rapide = QHBoxLayout()
@@ -339,11 +356,11 @@ class CampoDato(QWidget):
         if not testo:
             return None
         if self.tipo == "data":
-            return leggi_data(testo)
+            return leggi_data(testo, self._riferimento())
         if self.tipo == "ore":
             return formati.leggi_ore(testo)
         if self.tipo == "giorni":
-            return formati.leggi_giorni(testo, self._riferimento()) or None
+            return formati.leggi_giorni(testo, self._riferimento())
         return testo
 
     def testo_da_valore(self, valore: object) -> str:
@@ -364,11 +381,28 @@ class CampoDato(QWidget):
         self._errore_locale = ""
         if testo.strip() and valore is None:
             self._errore_locale = {
-                "data": "Data non valida: scrivi gg/mm/aaaa.",
+                "data": "Data non valida: scrivi gg/mm/aaaa o scegli dal calendario.",
                 "ore": "Ore non valide: scrivi per esempio 8 oppure 1:30.",
-                "giorni": "Giorni non validi: scrivi le date separate da virgole.",
+                "giorni": "Giorni non validi: scrivi le date separate da virgole "
+                "o sceglile dal calendario.",
             }.get(self.tipo, "")
         self.modificato.emit(self.nome, valore)
+
+    def _giorni_scritti(self) -> tuple[date, ...]:
+        """Le date già nella casella, da cui parte il calendario."""
+        editor = self.editor
+        valore = self.valore_da_testo(editor.text()) if isinstance(editor, QLineEdit) else None
+        if isinstance(valore, date):
+            return (valore,)
+        return valore if isinstance(valore, tuple) else ()
+
+    def _dal_calendario(self, giorni: tuple[date, ...]) -> None:
+        editor = self.editor
+        if not isinstance(editor, QLineEdit):
+            return
+        valore = giorni[0] if self.tipo == "data" and giorni else giorni or None
+        editor.setText(self.testo_da_valore(valore))
+        self._testo_utente(editor.text())
 
     def _scelta_utente(self, indice: int) -> None:
         self.modificato.emit(self.nome, self.editor.itemData(indice))

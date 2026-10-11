@@ -213,6 +213,23 @@ QPlainTextEdit#testo-log {
     font-family: "Cascadia Mono", Consolas, monospace; font-size: 9pt;
 }
 QToolTip { background: $superficie; color: $testo; border: 1px solid $bordo; padding: 4px; }
+
+QFrame[ruolo="calendario"] { background: $superficie; border: 1px solid $bordo; }
+QCalendarWidget QWidget#qt_calendar_navigationbar { background: $superficie; }
+QCalendarWidget QToolButton {
+    background: transparent; border: none; border-radius: ${r1}px; padding: 4px 8px;
+    color: $testo; font-weight: 600;
+}
+QCalendarWidget QToolButton:hover { background: $superficie_2; }
+QCalendarWidget QToolButton::menu-indicator { image: none; width: 0; }
+QCalendarWidget QAbstractItemView {
+    background: $superficie; outline: 0;
+    selection-background-color: $accento; selection-color: $accento_testo;
+}
+QCalendarWidget[multipli="true"] QAbstractItemView {
+    selection-background-color: $superficie; selection-color: $testo;
+}
+QCalendarWidget QSpinBox { padding: 2px 4px; }
 """
 )
 

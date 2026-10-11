@@ -183,6 +183,7 @@ def test_capienza_superata(finestra, qtbot):
     capienza = finestra.contesto.capienza(persona, finestra.contesto.impostazioni.tipi[1])
     ore = giustificativo.campi["minuti"].editor
     qtbot.keyClicks(ore, "24")
+    qtbot.keyClick(ore, Qt.Key.Key_Return)
     if capienza is not None and capienza < 24 * 60:
         assert "supera" in giustificativo.avviso_capienza.testo.text()
         assert giustificativo.avviso_capienza.property("avviso") == "attenzione"

@@ -4,6 +4,7 @@ import re
 from datetime import date
 
 import pytest
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication
 
 from assenze_desk.core.campi import Modulo, Origine, Proposta
@@ -102,8 +103,10 @@ def test_campo_mostra_origine_avviso_e_ripristino(app, qtbot):
     assert campo.editor.text() == "09/10/2026"
     assert campo.origine.text() == "PDF"
 
+    with qtbot.assertNotEmitted(campo.modificato):
+        qtbot.keyClicks(campo.editor, "x")  # le date valgono con Invio o uscendo
     with qtbot.waitSignal(campo.modificato) as segnale:
-        qtbot.keyClicks(campo.editor, "x")  # testo non valido
+        qtbot.keyClick(campo.editor, Qt.Key.Key_Return)  # testo non valido
     assert segnale.args == ["fine", None]
     modulo.scrivi("fine", None)
     campo.mostra(modulo["fine"])
@@ -112,6 +115,7 @@ def test_campo_mostra_origine_avviso_e_ripristino(app, qtbot):
 
     campo.editor.clear()
     qtbot.keyClicks(campo.editor, "10/10/2026")
+    qtbot.keyClick(campo.editor, Qt.Key.Key_Return)
     modulo.scrivi("fine", date(2026, 10, 10))
     campo.mostra(modulo["fine"])
     assert campo.origine.text() == "Manuale"

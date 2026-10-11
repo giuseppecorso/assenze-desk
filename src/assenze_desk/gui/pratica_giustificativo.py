@@ -8,7 +8,7 @@ quelle dell'orario del cliente; sopra la capienza residua compare un avviso.
 
 from datetime import date
 
-from PySide6.QtCore import Signal
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QGridLayout,
@@ -23,6 +23,7 @@ from assenze_desk.core import formati
 from assenze_desk.core.analisi import proposta_dipendente, proposte_permesso
 from assenze_desk.core.bozze import valori_giustificativo
 from assenze_desk.core.campi import Modulo, Origine
+from assenze_desk.core.date_utente import controlla_giorni
 from assenze_desk.core.dipendenti import Dipendente, trova_dipendente
 from assenze_desk.core.giustificativi import (
     RigaGiustificativo,
@@ -92,10 +93,11 @@ class PraticaGiustificativo(QWidget):
                 "giorni",
                 segnaposto="gg/mm/aaaa, gg/mm/aaaa",
                 riferimento=riferimento,
+                oggi=self._oggi,
             ),
         }
-        griglia.addWidget(self.campi["tipo"], 0, 0)
-        griglia.addWidget(self.campi["minuti"], 0, 1)
+        griglia.addWidget(self.campi["tipo"], 0, 0, Qt.AlignmentFlag.AlignTop)
+        griglia.addWidget(self.campi["minuti"], 0, 1, Qt.AlignmentFlag.AlignTop)
         griglia.addWidget(self.campi["giorni"], 1, 0, 1, 2)
         for campo in self.campi.values():
             campo.modificato.connect(self._campo_modificato)
@@ -166,6 +168,9 @@ class PraticaGiustificativo(QWidget):
     def _riferimento(self) -> date:
         return (self._info.ricevuta or self.contesto.adesso()).date()
 
+    def _oggi(self) -> date:
+        return self.contesto.adesso().date()
+
     # --- Dall'utente ---
 
     def _campo_modificato(self, nome: str, valore: object) -> None:
@@ -220,8 +225,9 @@ class PraticaGiustificativo(QWidget):
 
     def _ridisegna(self) -> None:
         self.campi["tipo"].imposta_scelte(self._nomi_tipi())
+        controllati = {"giorni": controlla_giorni(self.modulo["giorni"], self._oggi())}
         for nome, widget in self.campi.items():
-            widget.mostra(self.modulo[nome])
+            widget.mostra(controllati.get(nome, self.modulo[nome]))
         campo_dipendente = self.scelta["dipendente"]
         automatico = campo_dipendente.origine is Origine.ANAGRAFICA
         self.dipendente.mostra(

@@ -31,6 +31,7 @@ from assenze_desk.core.date import leggi_data
 from assenze_desk.core.stato import Stato
 from assenze_desk.core.testo import normalizza
 from assenze_desk.gui import icone, tema
+from assenze_desk.gui.calendario import aggiungi_calendario
 from assenze_desk.gui.componenti import (
     BarraMessaggi,
     Scheda,
@@ -100,9 +101,7 @@ class Archivio(QWidget):
 
         self.cerca = QLineEdit()
         self.cerca.setPlaceholderText("Cerca dipendente, CF, protocollo o cliente")
-        self.cerca.addAction(
-            icone.icona("cerca", "testo_2"), QLineEdit.ActionPosition.LeadingPosition
-        )
+        icone.in_casella(self.cerca, "cerca", QLineEdit.ActionPosition.LeadingPosition)
         self.cerca.setMinimumWidth(300)
         self.stato = QComboBox()
         self.stato.addItem("Tutti gli stati", None)
@@ -111,7 +110,14 @@ class Archivio(QWidget):
         self.dal, self.al = QLineEdit(), QLineEdit()
         for casella, testo in ((self.dal, "dal gg/mm/aaaa"), (self.al, "al gg/mm/aaaa")):
             casella.setPlaceholderText(testo)
-            casella.setMaximumWidth(130)
+            casella.setMaximumWidth(150)
+            aggiungi_calendario(
+                casella,
+                lambda c=casella: [d] if (d := self._data(c)) else [],
+                self._oggi,
+                lambda giorni, c=casella: c.setText(formati.data(giorni[0])),
+            )
+            casella.textChanged.connect(lambda _testo, c=casella: self._segna_data(c))
         self.da_esportare = QCheckBox("Solo da esportare")
         layout.addLayout(riga(self.cerca, self.stato, self.dal, self.al, self.da_esportare))
 
@@ -187,8 +193,24 @@ class Archivio(QWidget):
         self.da_esportare.setVisible(indice == 1)
         self.aggiorna()
 
+    def _oggi(self) -> date:
+        return self.contesto.adesso().date()
+
+    def _data(self, casella: QLineEdit) -> date | None:
+        return leggi_data(casella.text(), self._oggi())
+
+    def _segna_data(self, casella: QLineEdit) -> None:
+        """Una data del filtro che non si legge si evidenzia: il filtro non la usa."""
+        sbagliata = bool(casella.text().strip()) and self._data(casella) is None
+        casella.setToolTip(
+            "Data non valida: scrivi gg/mm/aaaa o scegli dal calendario." if sbagliata else ""
+        )
+        if bool(casella.property("incerto")) != sbagliata:
+            casella.setProperty("incerto", sbagliata)
+            tema.aggiorna_stile(casella)
+
     def _periodo(self) -> tuple[date | None, date | None]:
-        return leggi_data(self.dal.text()), leggi_data(self.al.text())
+        return self._data(self.dal), self._data(self.al)
 
     def _corrisponde(self, *campi: str) -> bool:
         parole = normalizza(self.cerca.text()).split()

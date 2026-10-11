@@ -7,7 +7,7 @@ a ogni modifica. Le mail restano bozze; salvare archivia anche il PDF.
 
 import logging
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 
 from PySide6.QtCore import Qt, QUrl, Signal
@@ -27,6 +27,7 @@ from assenze_desk.core.analisi import (
 from assenze_desk.core.bozze import valori_malattia
 from assenze_desk.core.campi import Modulo, Origine, Proposta
 from assenze_desk.core.certificato import TIPI, DatiCertificato
+from assenze_desk.core.date_utente import AVVISO_FINE_PRIMA, controlla_periodo
 from assenze_desk.core.dipendenti import Dipendente, trova_dipendente
 from assenze_desk.core.episodio import Certificato, Episodio
 from assenze_desk.core.stato import Stato, calcola_stato, serve_mail_ufficio
@@ -99,17 +100,18 @@ class PraticaMalattia(QWidget):
         griglia = QGridLayout()
         griglia.setHorizontalSpacing(16)
         griglia.setVerticalSpacing(12)
+        per_le_date = {"segnaposto": "gg/mm/aaaa", "riferimento": self._oggi, "oggi": self._oggi}
         self.campi = {
             "protocollo": CampoDato("protocollo", "Protocollo", mono=True),
             "cf": CampoDato("cf", "Codice fiscale", mono=True),
-            "inizio": CampoDato("inizio", "Dal", "data", segnaposto="gg/mm/aaaa"),
-            "fine": CampoDato("fine", "Al", "data", segnaposto="gg/mm/aaaa"),
+            "inizio": CampoDato("inizio", "Dal", "data", **per_le_date),
+            "fine": CampoDato("fine", "Al", "data", **per_le_date),
             "tipo_certificato": CampoDato(
                 "tipo_certificato", "Tipo di certificato", "scelta", TIPI
             ),
         }
         for numero, campo in enumerate(self.campi.values()):
-            griglia.addWidget(campo, numero // 2, numero % 2)
+            griglia.addWidget(campo, numero // 2, numero % 2, Qt.AlignmentFlag.AlignTop)
             campo.modificato.connect(self._campo_modificato)
             campo.ripristino.connect(self._ripristina)
         scheda.corpo.addLayout(griglia)
@@ -436,9 +438,14 @@ class PraticaMalattia(QWidget):
         """Ridisegna dopo un cambio di impostazioni (soglia, posta, cartelle)."""
         self._ridisegna()
 
+    def _oggi(self) -> date:
+        return self.contesto.adesso().date()
+
     def _ridisegna(self) -> None:
+        inizio, fine = controlla_periodo(self.modulo["inizio"], self.modulo["fine"], self._oggi())
+        controllati = {"inizio": inizio, "fine": fine}
         for nome, widget in self.campi.items():
-            widget.mostra(self.modulo[nome])
+            widget.mostra(controllati.get(nome, self.modulo[nome]))
         campo_dipendente = self.scelta["dipendente"]
         automatico = campo_dipendente.origine is Origine.ANAGRAFICA
         self.dipendente.mostra(
@@ -448,7 +455,9 @@ class PraticaMalattia(QWidget):
         self._episodio = self._calcola_episodio()
         soglia = self.contesto.impostazioni.soglia_ufficio
         lungo = bool(self._episodio and serve_mail_ufficio(self._episodio.giorni, soglia))
-        if self._episodio is None:
+        if self._episodio is None and AVVISO_FINE_PRIMA in fine.avviso:
+            self.episodio.setText("Episodio: correggi le date, la fine viene prima dell'inizio.")
+        elif self._episodio is None:
             self.episodio.setText("Episodio: servono protocollo, codice fiscale e date.")
         else:
             ep = self._episodio
