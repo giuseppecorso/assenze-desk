@@ -8,12 +8,17 @@ Fogli del file:
 - "Orari" (facoltativo): Cliente e ore di lavoro da Lunedì a Domenica.
 - "Capienze" (facoltativo): JobOrder e ore residue per tipo (Ferie, ROL, ...).
 
+Compatibile con il file di configurazione della v6.20 (anche .xlsm): se il
+foglio "Dipendenti" non ha le date dei JobOrder, si prendono dal primo altro
+foglio con le colonne JobOrder e data di inizio o di fine. Gli altri fogli e
+colonne della v6.20 (template, liste di distribuzione) non servono più.
+
 Le righe senza CF si scartano; un CF con il carattere di controllo sbagliato si
 importa con un avviso. Negli avvisi il CF è sempre mascherato.
 """
 
 from collections.abc import Iterable, Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import date, datetime
 from pathlib import Path
 from typing import Any
@@ -42,8 +47,24 @@ _ALIAS = {
     "email": {"email", "mail"},
     "joborder": {"joborder", "numjob", "numjoborder"},
     "cliente": {"cliente", "clienti"},
-    "inizio": {"iniziojoborder", "datainizio", "datainiziojo", "datainiziojoborder", "inizio"},
-    "fine": {"finejoborder", "datafine", "datafinejo", "datafinejoborder", "fine"},
+    "inizio": {
+        "iniziojoborder",
+        "datainizio",
+        "datainiziojo",
+        "datainiziojoborder",
+        "inizio",
+        "dtinizio",
+        "datainiziocontratto",
+    },
+    "fine": {
+        "finejoborder",
+        "datafine",
+        "datafinejo",
+        "datafinejoborder",
+        "fine",
+        "dtfine",
+        "datafinecontratto",
+    },
 }
 _INTESTAZIONI_DIPENDENTI = [
     "CF",
@@ -74,7 +95,9 @@ def importa_anagrafica(percorso: Path) -> EsitoImport:
         if FOGLIO_DIPENDENTI not in libro.sheetnames:
             raise ValueError(f"nel file manca il foglio '{FOGLIO_DIPENDENTI}'")
         avvisi: list[str] = []
-        dipendenti = _dipendenti(libro[FOGLIO_DIPENDENTI], avvisi)
+        dipendenti = _con_periodi(
+            _dipendenti(libro[FOGLIO_DIPENDENTI], avvisi), _periodi_da_altri_fogli(libro)
+        )
         orari = _orari(libro[FOGLIO_ORARI]) if FOGLIO_ORARI in libro.sheetnames else {}
         capienze = _capienze(libro[FOGLIO_CAPIENZE]) if FOGLIO_CAPIENZE in libro.sheetnames else {}
     finally:
@@ -208,6 +231,48 @@ def _dipendenti(foglio: Worksheet, avvisi: list[str]) -> list[Dipendente]:
             )
         )
     return dipendenti
+
+
+def _periodi_da_altri_fogli(libro: Any) -> dict[str, tuple[date | None, date | None]]:
+    """JobOrder → (inizio, fine) dal primo foglio che li contiene, come nella v6.20."""
+    for nome in libro.sheetnames:
+        if nome in (FOGLIO_DIPENDENTI, FOGLIO_ORARI, FOGLIO_CAPIENZE):
+            continue
+        foglio = libro[nome]
+        colonne = _colonne(next(foglio.iter_rows(max_row=1, values_only=True), ()))
+        if "joborder" not in colonne or not {"inizio", "fine"} & colonne.keys():
+            continue
+
+        def campo(riga: Sequence[Any], chiave: str, colonne=colonne) -> Any:
+            posizione = colonne.get(chiave)
+            return riga[posizione] if posizione is not None and posizione < len(riga) else None
+
+        periodi = {}
+        for _numero, riga in _righe(foglio):
+            joborder = _testo(campo(riga, "joborder"))
+            inizio, fine = _data(campo(riga, "inizio")), _data(campo(riga, "fine"))
+            if joborder and (inizio or fine):
+                periodi[joborder] = (inizio, fine)
+        if periodi:
+            return periodi
+    return {}
+
+
+def _con_periodi(
+    dipendenti: list[Dipendente], periodi: Mapping[str, tuple[date | None, date | None]]
+) -> list[Dipendente]:
+    """Le date scritte nel foglio Dipendenti vincono; le mancanti vengono dai periodi."""
+    completati = []
+    for d in dipendenti:
+        inizio, fine = periodi.get(d.joborder, (None, None))
+        completati.append(
+            replace(
+                d,
+                inizio_joborder=d.inizio_joborder or inizio,
+                fine_joborder=d.fine_joborder or fine,
+            )
+        )
+    return completati
 
 
 def _orari(foglio: Worksheet) -> dict[str, OrarioSettimanale]:

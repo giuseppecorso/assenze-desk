@@ -13,15 +13,15 @@ from assenze_desk.storage.anagrafica import importa_anagrafica, scrivi_anagrafic
 CF_LUCA = "FNTPRV80A01Z999Y"
 
 
-def salva(tmp_path, fogli):
-    """Crea un .xlsx con i fogli indicati: {nome: [intestazione, riga, ...]}."""
+def salva(tmp_path, fogli, nome="anagrafica.xlsx"):
+    """Crea un file Excel con i fogli indicati: {nome: [intestazione, riga, ...]}."""
     libro = Workbook()
     libro.remove(libro.active)
-    for nome, righe in fogli.items():
-        foglio = libro.create_sheet(nome)
+    for titolo, righe in fogli.items():
+        foglio = libro.create_sheet(titolo)
         for riga in righe:
             foglio.append(riga)
-    percorso = tmp_path / "anagrafica.xlsx"
+    percorso = tmp_path / nome
     libro.save(percorso)
     return percorso
 
@@ -78,6 +78,51 @@ def test_nomi_di_colonna_flessibili_e_valori_da_ripulire(tmp_path):
         inizio_joborder=date(2026, 1, 1),
         fine_joborder=date(2026, 6, 30),
     )
+
+
+def test_periodi_dei_joborder_in_un_altro_foglio_come_nella_v620(tmp_path):
+    # Il file di configurazione della v6.20 (.xlsm) tiene i periodi in un foglio
+    # a parte, con JobOrder e date d'inizio e fine: il nome del foglio non conta
+    percorso = salva(
+        tmp_path,
+        {
+            "Dipendenti": [
+                ["CF", "Cognome", "Nome", "JobOrder", "CDC", "DL"],
+                [CF_LUCA, "Fittizio", "Luca", "201111111", "X", "Y"],
+                [CF_LUCA, "Fittizio", "Luca", "202222222", "X", "Y"],
+                [CF_LUCA, "Fittizio", "Luca", "203333333", "X", "Y"],
+            ],
+            "Template": [["Chiave", "Testo"], ["Oggetto", "Certificato"]],
+            "Elenco periodi": [
+                ["NumJob", "Dt.Inizio", "Dt.Fine"],
+                [201111111, datetime(2026, 1, 1), datetime(2026, 3, 31)],
+                ["202222222", "01/04/2026", None],
+            ],
+        },
+        nome="config.xlsm",
+    )
+    dipendenti = importa_anagrafica(percorso).dipendenti
+    periodi = [(d.inizio_joborder, d.fine_joborder) for d in dipendenti]
+    assert periodi == [
+        (date(2026, 1, 1), date(2026, 3, 31)),
+        (date(2026, 4, 1), None),
+        (None, None),  # JobOrder senza periodo
+    ]
+
+
+def test_le_date_nel_foglio_dipendenti_vincono(tmp_path):
+    percorso = salva(
+        tmp_path,
+        {
+            "Dipendenti": [
+                ["CF", "JobOrder", "Data inizio"],
+                [CF_LUCA, "201111111", datetime(2026, 2, 1)],
+            ],
+            "Periodi": [["JobOrder", "Data inizio"], ["201111111", datetime(2025, 1, 1)]],
+        },
+    )
+    [dipendente] = importa_anagrafica(percorso).dipendenti
+    assert dipendente.inizio_joborder == date(2026, 2, 1)
 
 
 def test_nome_completo_in_una_sola_colonna(tmp_path):
