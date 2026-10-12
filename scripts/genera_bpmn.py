@@ -280,7 +280,7 @@ def _svg(d: Diagramma) -> str:
             for da, a, _e in d.flussi
         )
         parti.append(_nodo_svg(n, corsie, n.corsia in d.corsie_app, sale))
-    parti.append("</svg>")
+    parti.append("</svg>\n")
     return "".join(parti)
 
 
@@ -403,7 +403,8 @@ def _bpmn(d: Diagramma) -> str:
         for x, y in _percorso(nodi[da], nodi[a], corsie):
             ET.SubElement(arco, di("di", "waypoint"), {"x": f"{x:.0f}", "y": f"{y:.0f}"})
     ET.indent(radice)
-    return '<?xml version="1.0" encoding="UTF-8"?>\n' + ET.tostring(radice, encoding="unicode")
+    xml = ET.tostring(radice, encoding="unicode")
+    return f'<?xml version="1.0" encoding="UTF-8"?>\n{xml}\n'
 
 
 # --- Processi ---
