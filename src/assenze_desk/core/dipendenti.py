@@ -5,7 +5,8 @@ avere più righe (più JobOrder, più clienti). L'anagrafica arriva come dato.
 
 Fonti, in ordine (ci si ferma alla prima che dà candidati):
 1. JobOrder; 2. mittente, escluse le mail interne (se il mittente è interno si
-cercano gli indirizzi nel testo); 3. codice fiscale; 4. nomi nel testo: nome e
+cercano gli indirizzi nel testo), con l'email dell'anagrafica o con un indirizzo
+ricordato in precedenza per quel CF; 3. codice fiscale; 4. nomi nel testo: nome e
 cognome nell'oggetto o nel nome del mittente, poi nel corpo; il solo cognome dà
 solo suggerimenti. Le righe di saluto ("Buongiorno Anna ...") si ignorano:
 nominano chi riceve la mail.
@@ -15,7 +16,7 @@ altrimenti sceglie l'utente. Il CF non compare mai nei messaggi (privacy).
 """
 
 import re
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import date
 
@@ -76,10 +77,12 @@ def trova_dipendente(
     joborder: str = "",
     periodo: Periodo | None = None,
     domini_interni: Sequence[str] = (),
+    email_note: Mapping[str, str] = {},  # indirizzo → CF, solo letto
 ) -> EsitoMatch:
+    per_mittente = _per_mittente(anagrafica, mittente, testo, domini_interni, email_note)
     fonti = [
         ("JobOrder", [d for d in anagrafica if joborder and d.joborder == joborder.strip()], True),
-        ("mittente", _per_mittente(anagrafica, mittente, testo, domini_interni), True),
+        ("mittente", per_mittente, True),
         ("codice fiscale", [d for d in anagrafica if cf and _cf(d.cf) == _cf(cf)], True),
     ]
     per_nome, sicuro = _per_nome(anagrafica, testo)
@@ -115,16 +118,46 @@ def indirizzo_interno(email: str, domini_interni: Sequence[str]) -> bool:
     return any(dominio == d.lower() or dominio.endswith("." + d.lower()) for d in domini_interni)
 
 
+def email_da_ricordare(
+    mittente: str,
+    dipendente: Dipendente,
+    domini_interni: Sequence[str],
+    email_note: Mapping[str, str],
+) -> str:
+    """L'indirizzo del mittente da ricordare per quel dipendente, oppure "".
+
+    Si ricorda solo un indirizzo esterno, diverso da quello in anagrafica e non
+    già ricordato per lo stesso CF (se era di un altro CF, vale l'ultima scelta)."""
+    trovato = _EMAIL.search(mittente)
+    if not trovato:
+        return ""
+    indirizzo = trovato.group().lower()
+    if indirizzo_interno(indirizzo, domini_interni):
+        return ""
+    if indirizzo == dipendente.email.strip().lower():
+        return ""
+    if _cf(email_note.get(indirizzo, "")) == _cf(dipendente.cf):
+        return ""
+    return indirizzo
+
+
 def _per_mittente(
-    anagrafica: Sequence[Dipendente], mittente: str, testo: str, domini_interni: Sequence[str]
+    anagrafica: Sequence[Dipendente],
+    mittente: str,
+    testo: str,
+    domini_interni: Sequence[str],
+    email_note: Mapping[str, str],
 ) -> list[Dipendente]:
-    indirizzi = [mittente] if mittente.strip() else []
+    indirizzi = _EMAIL.findall(mittente) or ([mittente] if mittente.strip() else [])
     indirizzi += _EMAIL.findall(testo)
+    note = {email.lower(): _cf(cf) for email, cf in email_note.items()}
     for indirizzo in indirizzi:
         indirizzo = indirizzo.strip().lower()
         if indirizzo_interno(indirizzo, domini_interni):
             continue
         trovati = [d for d in anagrafica if d.email and d.email.strip().lower() == indirizzo]
+        if not trovati and indirizzo in note:
+            trovati = [d for d in anagrafica if _cf(d.cf) == note[indirizzo]]
         if trovati:
             return trovati
     return []

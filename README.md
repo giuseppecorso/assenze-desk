@@ -46,6 +46,10 @@ Per esempio:
     Anagrafica, Manuale, Archivio). Un campo corretto a mano non viene più
     sovrascritto e si può tornare al valore automatico. Le date si scelgono
     anche da un mini calendario.
+  - **Dipendente riconosciuto anche da un indirizzo nuovo:** se scrive da una
+    mail diversa da quella in anagrafica, lo trova da JobOrder, CF o nome e
+    ricorda l'indirizzo per le volte successive. I suoi dati si correggono
+    nell'app senza toccare il file Excel.
 - **Episodio di malattia**: i certificati contigui dello stesso lavoratore
   formano un episodio; oltre la soglia serve la mail all'ufficio, con i PDF di
   tutto l'episodio.

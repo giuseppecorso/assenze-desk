@@ -287,6 +287,7 @@ class CampoDato(QWidget):
 
     modificato = Signal(str, object)
     ripristino = Signal(str)
+    scritto_a_mano = Signal(str, object)  # testo finito di scrivere (Invio o uscita)
 
     def __init__(
         self,
@@ -298,9 +299,12 @@ class CampoDato(QWidget):
         segnaposto: str = "",
         riferimento: Callable[[], date] = date.today,
         oggi: Callable[[], date] = date.today,
+        al_termine: Callable[[str], str] | None = None,
     ) -> None:
         super().__init__()
         self.nome, self.tipo = nome, tipo
+        self._al_termine = al_termine  # pulizia del testo quando si finisce di scrivere
+        self._scritto = False
         self._riferimento = riferimento
         self._errore_locale = ""
         self._scelte_rapide: tuple = ()
@@ -322,6 +326,8 @@ class CampoDato(QWidget):
             casella.setProperty("mono", mono)
             if tipo == "testo":
                 casella.textEdited.connect(self._testo_utente)
+                casella.textEdited.connect(lambda _testo: setattr(self, "_scritto", True))
+                casella.editingFinished.connect(self._fine_scrittura)
             else:
                 # Date e ore valgono con Invio o uscendo dalla casella: mentre si
                 # scrive "12/10/20" non compaiono avvisi su una data a metà
@@ -382,6 +388,20 @@ class CampoDato(QWidget):
         return str(valore)
 
     # --- Dall'utente ---
+
+    def _fine_scrittura(self) -> None:
+        """Testo scritto a mano e finito: la pulizia (se c'è) si fa qui, non a ogni
+        tasto, così mentre si scrive il cursore non salta."""
+        if not self._scritto:
+            return
+        self._scritto = False
+        editor = self.editor
+        testo = editor.text()
+        pulito = self._al_termine(testo) if self._al_termine else testo
+        if pulito != testo:
+            editor.setText(pulito)
+            self._testo_utente(pulito)
+        self.scritto_a_mano.emit(self.nome, self.valore_da_testo(pulito))
 
     def _testo_utente(self, testo: str) -> None:
         valore = self.valore_da_testo(testo)

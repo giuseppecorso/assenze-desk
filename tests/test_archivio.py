@@ -224,7 +224,7 @@ def test_versione_dello_schema(tmp_path, orologio):
     with Archivio(percorso, adesso=orologio):
         pass
     with closing(sqlite3.connect(percorso)) as connessione:  # "with connect" non chiude
-        assert connessione.execute("PRAGMA user_version").fetchone()[0] == 1
+        assert connessione.execute("PRAGMA user_version").fetchone()[0] == 2
 
 
 def test_errori_di_uso(archivio):
@@ -240,3 +240,48 @@ def test_date_e_ore_salvate_come_testo(archivio):
     archivio.aggiorna("411111111", data_presentazione=date(2026, 10, 2), tempo_gestione_sec=95.5)
     letta = archivio.pratica("411111111")
     assert (letta.data_presentazione, letta.tempo_gestione_sec) == (date(2026, 10, 2), 95.5)
+
+
+# --- Indirizzi ricordati e correzioni dell'anagrafica ---
+
+
+def test_email_ricordate(archivio):
+    assert archivio.email_note() == {}
+    archivio.ricorda_email("Luca.Casa@Example.org", CF_LUCA.lower())
+    assert archivio.email_note() == {"luca.casa@example.org": CF_LUCA}
+    archivio.ricorda_email("luca.casa@example.org", "TSTCSO92M45Z888V")  # vale l'ultima
+    assert archivio.email_note() == {"luca.casa@example.org": "TSTCSO92M45Z888V"}
+
+    archivio.imposta_email_di(CF_LUCA, ["a@example.org", " B@example.org ", ""])
+    assert archivio.email_di(CF_LUCA) == ["a@example.org", "b@example.org"]
+    archivio.imposta_email_di(CF_LUCA, ["b@example.org"])
+    assert archivio.email_di(CF_LUCA) == ["b@example.org"]
+    assert archivio.email_di("TSTCSO92M45Z888V") == ["luca.casa@example.org"]
+
+
+def test_correzioni_dell_anagrafica(archivio):
+    assert archivio.correzioni() == {}
+    archivio.salva_correzione(
+        CF_LUCA.lower(), "JO1", {"email": "x@example.org", "inizio_joborder": date(2026, 2, 1)}
+    )
+    archivio.salva_correzione(CF_LUCA, "JO2", {"fine_joborder": None})
+    assert archivio.correzioni() == {
+        (CF_LUCA, "JO1"): {"email": "x@example.org", "inizio_joborder": date(2026, 2, 1)},
+        (CF_LUCA, "JO2"): {"fine_joborder": None},
+    }
+    archivio.salva_correzione(CF_LUCA, "JO1", {"nome": "Luca Maria"})  # sostituisce
+    assert archivio.correzioni()[(CF_LUCA, "JO1")] == {"nome": "Luca Maria"}
+    archivio.togli_correzione(CF_LUCA, "JO1")
+    assert (CF_LUCA, "JO1") not in archivio.correzioni()
+    archivio.salva_correzione(CF_LUCA, "JO2", {})  # nessuna differenza: niente correzione
+    assert archivio.correzioni() == {}
+
+
+def test_archivio_della_versione_precedente_si_aggiorna(tmp_path):
+    """Un archivio creato prima delle nuove tabelle le riceve all'apertura."""
+    percorso = tmp_path / "vecchio.db"
+    with closing(sqlite3.connect(percorso)) as db, db:
+        db.execute("CREATE TABLE storico (id INTEGER PRIMARY KEY, quando TEXT, azione TEXT)")
+    with Archivio(percorso) as archivio:
+        archivio.ricorda_email("a@example.org", CF_LUCA)
+        assert archivio.email_note() == {"a@example.org": CF_LUCA}

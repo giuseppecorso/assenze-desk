@@ -66,6 +66,14 @@ def estrai_protocollo(
     return _scegli((mail.corpo, mail.oggetto), mail.intestazioni, regola, escluso=joborder)
 
 
+def pulisci_protocollo(scritto: str) -> str:
+    """Protocollo scritto a mano: via spazi, trattini e punti se resta solo un numero.
+    Altrimenti resta com'è, così l'utente vede l'avviso e corregge."""
+    scritto = scritto.strip()
+    cifre = re.sub(r"[\s.\-]", "", scritto)
+    return cifre if cifre.isdigit() else scritto
+
+
 def _scegli(
     sezioni: tuple[str, ...],
     intestazioni: str,

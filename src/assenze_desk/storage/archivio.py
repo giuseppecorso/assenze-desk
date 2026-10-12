@@ -1,4 +1,5 @@
-"""Archivio SQLite: pratiche di malattia, righe dei giustificativi, storico delle azioni.
+"""Archivio SQLite: pratiche di malattia, righe dei giustificativi, storico delle
+azioni, indirizzi email ricordati e correzioni dell'anagrafica.
 
 Prende il posto dei due file Excel della v6.20, che venivano riaperti e
 risalvati per intero a ogni modifica: qui ogni modifica tocca solo la riga
@@ -18,7 +19,7 @@ from assenze_desk.core.episodio import Certificato
 from assenze_desk.core.privacy import maschera_cf
 from assenze_desk.core.stato import SOGLIA_UFFICIO, Stato, calcola_stato
 
-VERSIONE_SCHEMA = 1
+VERSIONE_SCHEMA = 2  # 2: email ricordate e correzioni dell'anagrafica
 
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS pratiche (
@@ -62,7 +63,23 @@ CREATE TABLE IF NOT EXISTS storico (
     protocollo TEXT NOT NULL DEFAULT '',
     dettaglio TEXT NOT NULL DEFAULT ''
 );
+
+CREATE TABLE IF NOT EXISTS email_note (
+    email TEXT PRIMARY KEY,
+    cf TEXT NOT NULL,
+    quando TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS correzioni_anagrafica (
+    cf TEXT NOT NULL,
+    joborder TEXT NOT NULL,
+    campo TEXT NOT NULL,
+    valore TEXT,
+    PRIMARY KEY (cf, joborder, campo)
+);
 """
+
+_CAMPI_DATA = {"inizio_joborder", "fine_joborder"}
 
 
 @dataclass(frozen=True)
@@ -282,6 +299,66 @@ class Archivio:
     def elimina_righe(self, ids: Sequence[int]) -> None:
         with self._db:
             self._db.executemany("DELETE FROM righe WHERE id = ?", [(i,) for i in ids])
+
+    # --- Indirizzi ricordati: chi scrive da una mail diversa da quella in anagrafica ---
+
+    def email_note(self) -> dict[str, str]:
+        righe = self._db.execute("SELECT email, cf FROM email_note")
+        return {r["email"]: r["cf"] for r in righe}
+
+    def ricorda_email(self, email: str, cf: str) -> None:
+        with self._db:
+            self._db.execute(
+                "INSERT OR REPLACE INTO email_note (email, cf, quando) VALUES (?, ?, ?)",
+                (email.strip().lower(), cf.strip().upper(), _testo(self._adesso())),
+            )
+
+    def email_di(self, cf: str) -> list[str]:
+        righe = self._db.execute(
+            "SELECT email FROM email_note WHERE cf = ? ORDER BY email", (cf.strip().upper(),)
+        )
+        return [r["email"] for r in righe]
+
+    def imposta_email_di(self, cf: str, indirizzi: Iterable[str]) -> None:
+        """Sostituisce gli indirizzi ricordati per quel CF."""
+        cf = cf.strip().upper()
+        puliti = dict.fromkeys(i.strip().lower() for i in indirizzi if i.strip())
+        with self._db:
+            self._db.execute("DELETE FROM email_note WHERE cf = ?", (cf,))
+            self._db.executemany(
+                "INSERT OR REPLACE INTO email_note (email, cf, quando) VALUES (?, ?, ?)",
+                [(email, cf, _testo(self._adesso())) for email in puliti],
+            )
+
+    # --- Correzioni dell'anagrafica (l'Excel non si tocca) ---
+
+    def correzioni(self) -> dict[tuple[str, str], dict[str, Any]]:
+        risultato: dict[tuple[str, str], dict[str, Any]] = {}
+        for r in self._db.execute("SELECT * FROM correzioni_anagrafica"):
+            valore = r["valore"]
+            if r["campo"] in _CAMPI_DATA and valore is not None:
+                valore = date.fromisoformat(valore)
+            risultato.setdefault((r["cf"], r["joborder"]), {})[r["campo"]] = valore
+        return risultato
+
+    def salva_correzione(self, cf: str, joborder: str, campi: dict[str, Any]) -> None:
+        """Sostituisce la correzione di quella riga; senza campi la toglie."""
+        cf, joborder = cf.strip().upper(), joborder.strip()
+        with self._db:
+            self._db.execute(
+                "DELETE FROM correzioni_anagrafica WHERE cf = ? AND joborder = ?", (cf, joborder)
+            )
+            self._db.executemany(
+                "INSERT INTO correzioni_anagrafica (cf, joborder, campo, valore) "
+                "VALUES (?, ?, ?, ?)",
+                [
+                    (cf, joborder, campo, None if valore is None else _in_colonna(campo, valore))
+                    for campo, valore in campi.items()
+                ],
+            )
+
+    def togli_correzione(self, cf: str, joborder: str) -> None:
+        self.salva_correzione(cf, joborder, {})
 
     # --- Storico delle azioni ---
 

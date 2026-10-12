@@ -30,6 +30,7 @@ from assenze_desk.core.certificato import TIPI, DatiCertificato
 from assenze_desk.core.date_utente import AVVISO_FINE_PRIMA, controlla_periodo
 from assenze_desk.core.dipendenti import Dipendente, trova_dipendente
 from assenze_desk.core.episodio import Certificato, Episodio
+from assenze_desk.core.identificativi import pulisci_protocollo
 from assenze_desk.core.risposte import da_collega, scegli_risposta
 from assenze_desk.core.stato import Stato, calcola_stato, serve_mail_ufficio
 from assenze_desk.gui.componenti import (
@@ -45,6 +46,7 @@ from assenze_desk.gui.componenti import (
     separatore,
 )
 from assenze_desk.gui.errori import esegui
+from assenze_desk.gui.modifica_dipendente import modifica_nella_pratica, nota_mittente
 from assenze_desk.gui.pannello_dipendente import PannelloDipendente
 from assenze_desk.servizi import Contesto
 from assenze_desk.storage.archivio import Pratica
@@ -82,6 +84,7 @@ class PraticaMalattia(QWidget):
         self._pdf: Path | None = None
         self._dati_pdf: DatiCertificato | None = None
         self._mail_lavoratore = self._mail_ufficio = False
+        self._nota_mittente = ""  # "riconosco X anche da ...", dopo il salvataggio
         self._episodio: Episodio | None = None
 
         layout = QVBoxLayout(self)
@@ -89,6 +92,7 @@ class PraticaMalattia(QWidget):
         layout.setSpacing(12)
         self.dipendente = PannelloDipendente(lambda: self.contesto.anagrafica.dipendenti)
         self.dipendente.scelto.connect(self._dipendente_scelto)
+        self.dipendente.modifica_richiesta.connect(self._modifica_dipendente)
         layout.addWidget(self.dipendente)
         layout.addWidget(self._scheda_certificato())
         layout.addWidget(self._scheda_inps())
@@ -105,8 +109,12 @@ class PraticaMalattia(QWidget):
         griglia.setVerticalSpacing(12)
         per_le_date = {"segnaposto": "gg/mm/aaaa", "riferimento": self._oggi, "oggi": self._oggi}
         self.campi = {
-            "protocollo": CampoDato("protocollo", "Protocollo", mono=True),
-            "cf": CampoDato("cf", "Codice fiscale", mono=True),
+            "protocollo": CampoDato(
+                "protocollo", "Protocollo", mono=True, al_termine=pulisci_protocollo
+            ),
+            "cf": CampoDato(
+                "cf", "Codice fiscale", mono=True, al_termine=lambda t: "".join(t.split()).upper()
+            ),
             "inizio": CampoDato("inizio", "Dal", "data", **per_le_date),
             "fine": CampoDato("fine", "Al", "data", **per_le_date),
             "tipo_certificato": CampoDato(
@@ -117,6 +125,9 @@ class PraticaMalattia(QWidget):
             griglia.addWidget(campo, numero // 2, numero % 2, Qt.AlignmentFlag.AlignTop)
             campo.modificato.connect(self._campo_modificato)
             campo.ripristino.connect(self._ripristina)
+        self.campi["protocollo"].scritto_a_mano.connect(
+            lambda _nome, valore: valore and self._copia("protocollo", "Protocollo copiato.")
+        )
         scheda.corpo.addLayout(griglia)
         scheda.corpo.addWidget(separatore())
         self.episodio = etichetta("", a_capo=True)
@@ -223,6 +234,7 @@ class PraticaMalattia(QWidget):
             joborder=self._valore_effettivo("joborder") or "",
             periodo=(inizio, fine) if inizio and fine else None,
             domini_interni=imp.domini_interni,
+            email_note=self.contesto.email_note,
         )
         self._motivo = esito.motivo
         self.scelta.proponi({"dipendente": proposta_dipendente(esito)})
@@ -247,6 +259,11 @@ class PraticaMalattia(QWidget):
     def _ripristina(self, nome: str) -> None:
         self.modulo.ripristina(nome)
         self._ridisegna()
+
+    def _modifica_dipendente(self, dipendente: Dipendente) -> None:
+        if esegui(self.messaggi, lambda: modifica_nella_pratica(self, dipendente)):
+            self._proponi()
+            self._ridisegna()
 
     def _dipendente_scelto(self, dipendente: Dipendente) -> None:
         self.scelta.scrivi("dipendente", dipendente)
@@ -382,6 +399,7 @@ class PraticaMalattia(QWidget):
     def _dopo_bozza(self, testo, mancanti: tuple[str, ...], azione=None, avviso=False) -> None:
         if self.modulo["protocollo"].valore:
             self._salva()
+            testo += self._nota_mittente
         self._ridisegna()
         if mancanti:
             testo += f" Segnaposti senza valore: {', '.join(mancanti)}."
@@ -400,7 +418,7 @@ class PraticaMalattia(QWidget):
     def _salva_e_conferma(self) -> None:
         self._salva()
         stato = self._stato()
-        self.messaggi.mostra(f"Pratica salvata. Stato: {stato}.", "ok")
+        self.messaggi.mostra(f"Pratica salvata. Stato: {stato}.{self._nota_mittente}", "ok")
 
     def _salva(self) -> None:
         v = self.modulo.valori()
@@ -435,6 +453,9 @@ class PraticaMalattia(QWidget):
             note=esistente.note if esistente else "",
         )
         archiviato = self.contesto.salva_pratica(pratica, self._pdf)
+        collega = self.risposta_a.indice() == 1  # la mail è di un collega, non del dipendente
+        mittente = "" if collega else self._info.mittente
+        self._nota_mittente = nota_mittente(self.contesto, dipendente, mittente)
         if archiviato is not None and archiviato != self._pdf:
             self._pdf = archiviato
             self.pdf_cambiato.emit(archiviato)

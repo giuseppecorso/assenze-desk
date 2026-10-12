@@ -353,3 +353,43 @@ def test_salvare_le_impostazioni_le_applica(contesto):
     assert avvisi == []
     assert contesto.archivio.soglia_ufficio == 5
     assert '"soglia_ufficio": 5' in contesto.file_impostazioni.read_text(encoding="utf-8")
+
+
+# --- Mail ricordate e correzioni dell'anagrafica ---
+
+
+def test_ricorda_il_mittente_diverso_dall_anagrafica(contesto):
+    dipendente = contesto.anagrafica.dipendenti[0]
+    assert contesto.ricorda_mittente(dipendente, "Casa <Casa.Mia@example.org>") == (
+        "casa.mia@example.org"
+    )
+    assert contesto.email_note == {"casa.mia@example.org": dipendente.cf}
+    assert contesto.ricorda_mittente(dipendente, "casa.mia@example.org") == ""  # già noto
+    assert contesto.ricorda_mittente(dipendente, dipendente.email) == ""
+    assert contesto.archivio.storico()[0].azione == "Indirizzo del mittente ricordato"
+    assert dipendente.cf not in contesto.archivio.storico()[0].dettaglio
+
+
+def test_correzione_sopra_l_excel(contesto):
+    originale = contesto.anagrafica.dipendenti[0]
+    corretto = replace(originale, email="nuova@example.org", cliente="Cliente Nuovo")
+    contesto.correggi_dipendente(corretto, ["altra@example.org", "nuova@example.org"])
+    assert contesto.anagrafica.dipendenti[0] == corretto
+    assert contesto.corretto(corretto)
+    assert contesto.archivio.email_di(corretto.cf) == ["altra@example.org"]  # senza la principale
+    assert contesto.anagrafica_excel.dipendenti[0] == originale  # l'Excel non cambia
+
+    contesto.ricarica_anagrafica()  # anche ricaricando l'Excel la correzione resta
+    assert contesto.anagrafica.dipendenti[0] == corretto
+
+    contesto.togli_correzione(corretto)
+    assert contesto.anagrafica.dipendenti[0] == originale
+    assert not contesto.corretto(originale)
+
+
+def test_correzione_di_un_dipendente_non_in_anagrafica(contesto):
+    from assenze_desk.core.dipendenti import Dipendente
+
+    estraneo = Dipendente("ZZZZZZ80A01Z999Z", "Nuovo", "Dipendente", joborder="X1")
+    with pytest.raises(ErroreServizi, match="anagrafica"):
+        contesto.correggi_dipendente(estraneo, [])

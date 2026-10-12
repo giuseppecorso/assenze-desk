@@ -14,6 +14,7 @@ from assenze_desk.core.identificativi import (
     RegolaNumero,
     estrai_joborder,
     estrai_protocollo,
+    pulisci_protocollo,
 )
 
 # --- Protocollo: lettura del numero ---
@@ -152,3 +153,18 @@ def test_valori_predefiniti():
 def test_impostazioni_non_valide(parametri):
     with pytest.raises(ValueError):
         RegolaNumero(**parametri)
+
+
+@pytest.mark.parametrize(
+    ("scritto", "pulito"),
+    [
+        ("452 616 891", "452616891"),
+        (" 452-616-891 ", "452616891"),
+        ("452.616.891", "452616891"),
+        ("452616891", "452616891"),
+        ("PROT 4526", "PROT 4526"),  # non è solo un numero: resta com'è (con il suo avviso)
+        ("", ""),
+    ],
+)
+def test_pulisci_protocollo_scritto_a_mano(scritto, pulito):
+    assert pulisci_protocollo(scritto) == pulito

@@ -12,6 +12,7 @@ from assenze_desk.core.dipendenti import (
     Dipendente,
     attivo_nel_periodo,
     cerca_dipendenti,
+    email_da_ricordare,
     trova_dipendente,
 )
 
@@ -95,6 +96,40 @@ def test_mittente_interno_senza_altri_indirizzi():
     esito = trova(mittente="collega@azienda.example", domini_interni=("azienda.example",))
     assert esito.dipendente is None
     assert esito.candidati == ()
+
+
+def test_mittente_ricordato():
+    """Chi scrive da un indirizzo non in anagrafica viene riconosciuto se l'indirizzo
+    è stato ricordato (email → CF), anche con maiuscole diverse."""
+    note = {"marco.casa@example.org": CF_MARCO}
+    esito = trova(mittente="Marco.Casa@example.org", email_note=note)
+    assert esito.dipendente == MARCO
+    assert "mittente" in esito.motivo
+    assert trova(mittente="marco.casa@example.org").dipendente is None
+
+
+def test_mittente_ricordato_con_piu_joborder_sceglie_il_periodo():
+    note = {"luca.casa@example.org": CF_LUCA}
+    esito = trova(mittente="luca.casa@example.org", email_note=note, periodo=OTTOBRE)
+    assert esito.dipendente == LUCA_BETA
+
+
+@pytest.mark.parametrize(
+    ("mittente", "note", "atteso"),
+    [
+        ("Marco <marco.casa@example.org>", {}, "marco.casa@example.org"),  # nuovo indirizzo
+        ("MARCO.CASA@example.org", {}, "marco.casa@example.org"),
+        ("anna.esempio@example.com", {}, ""),  # è già l'indirizzo in anagrafica
+        ("collega@azienda.example", {}, ""),  # mail interna: un collega, non il dipendente
+        ("", {}, ""),
+        ("senza indirizzo", {}, ""),
+        ("marco.casa@example.org", {"marco.casa@example.org": CF_MARCO}, ""),  # già ricordato
+        ("marco.casa@example.org", {"marco.casa@example.org": CF_ANNA}, "marco.casa@example.org"),
+    ],
+)
+def test_email_da_ricordare(mittente, note, atteso):
+    dipendente = ANNA if mittente.startswith("anna") else MARCO
+    assert email_da_ricordare(mittente, dipendente, ("azienda.example",), note) == atteso
 
 
 def test_cf():

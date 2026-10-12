@@ -44,6 +44,7 @@ from assenze_desk.gui.componenti import (
     riga,
 )
 from assenze_desk.gui.errori import esegui
+from assenze_desk.gui.modifica_dipendente import modifica_nella_pratica, nota_mittente
 from assenze_desk.gui.pannello_dipendente import PannelloDipendente
 from assenze_desk.gui.pratica_malattia import InfoMail
 from assenze_desk.servizi import Contesto
@@ -68,6 +69,7 @@ class PraticaGiustificativo(QWidget):
         layout.setSpacing(12)
         self.dipendente = PannelloDipendente(lambda: self.contesto.anagrafica.dipendenti)
         self.dipendente.scelto.connect(self._dipendente_scelto)
+        self.dipendente.modifica_richiesta.connect(self._modifica_dipendente)
         layout.addWidget(self.dipendente)
         layout.addWidget(self._scheda_richiesta())
         layout.addWidget(self._scheda_righe())
@@ -164,6 +166,7 @@ class PraticaGiustificativo(QWidget):
             mittente=info.mittente,
             periodo=(min(tutti), max(tutti)) if tutti else None,
             domini_interni=imp.domini_interni,
+            email_note=self.contesto.email_note,
         )
         self._motivo = esito.motivo
         self.scelta.proponi({"dipendente": proposta_dipendente(esito)})
@@ -188,6 +191,10 @@ class PraticaGiustificativo(QWidget):
     def _ripristina(self, nome: str) -> None:
         self.modulo.ripristina(nome)
         self._ridisegna()
+
+    def _modifica_dipendente(self, dipendente: Dipendente) -> None:
+        if esegui(self.messaggi, lambda: modifica_nella_pratica(self, dipendente)):
+            self._ridisegna()
 
     def _dipendente_scelto(self, dipendente: Dipendente) -> None:
         self.scelta.scrivi("dipendente", dipendente)
@@ -348,10 +355,11 @@ class PraticaGiustificativo(QWidget):
             return
         righe = self.righe()
         ids = self.contesto.salva_righe(dipendente, righe)
+        nota = nota_mittente(self.contesto, dipendente, self._info.mittente)
         self._salvate = True
         self.salvata.emit()
         self._ridisegna()
-        self.messaggi.mostra(f"Salvate {len(ids)} righe di {righe[0].tipo}.", "ok")
+        self.messaggi.mostra(f"Salvate {len(ids)} righe di {righe[0].tipo}.{nota}", "ok")
 
     def svuota(self) -> None:
         self.modulo.svuota()

@@ -11,7 +11,7 @@ import shutil
 import webbrowser
 import zipfile
 from collections.abc import Callable, Mapping, Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import date, datetime
 from pathlib import Path
 
@@ -29,7 +29,8 @@ from assenze_desk.adapters.outlook import MailImportata, Outlook
 from assenze_desk.adapters.pdf import leggi_certificato_pdf
 from assenze_desk.config import Impostazioni, carica_impostazioni, salva_impostazioni
 from assenze_desk.core.certificato import DatiCertificato
-from assenze_desk.core.dipendenti import Dipendente
+from assenze_desk.core.correzioni import applica_correzioni, chiave, differenze
+from assenze_desk.core.dipendenti import Dipendente, email_da_ricordare
 from assenze_desk.core.episodio import Certificato, Episodio, calcola_episodio
 from assenze_desk.core.giustificativi import RigaGiustificativo, TipoGiustificativo
 from assenze_desk.core.statistiche import PraticaStatistica
@@ -64,6 +65,11 @@ class Contesto:
     adesso: Callable[[], datetime] = datetime.now
     apri_url: Callable[[str], object] = webbrowser.open
     _portale_aperto: datetime | None = field(default=None, repr=False)
+    # L'anagrafica come sta nell'Excel; `anagrafica` è questa con le correzioni dell'app
+    anagrafica_excel: EsitoImport | None = field(default=None, repr=False)
+
+    def __post_init__(self) -> None:
+        self._applica_correzioni(self.anagrafica)
 
     def chiudi(self) -> None:
         self.archivio.chiudi()
@@ -86,8 +92,76 @@ class Contesto:
     # --- Anagrafica ---
 
     def ricarica_anagrafica(self) -> list[str]:
-        self.anagrafica, avvisi = _carica_anagrafica(self.impostazioni.percorsi.anagrafica)
+        excel, avvisi = _carica_anagrafica(self.impostazioni.percorsi.anagrafica)
+        self._applica_correzioni(excel)
         return avvisi
+
+    def _applica_correzioni(self, excel: EsitoImport) -> None:
+        self.anagrafica_excel = excel
+        corretti = applica_correzioni(excel.dipendenti, self.archivio.correzioni())
+        self.anagrafica = replace(excel, dipendenti=corretti)
+
+    def originale(self, dipendente: Dipendente) -> Dipendente | None:
+        """La riga dell'Excel dello stesso dipendente e JobOrder, se c'è."""
+        excel = self.anagrafica_excel.dipendenti if self.anagrafica_excel else ()
+        return next((d for d in excel if chiave(d) == chiave(dipendente)), None)
+
+    def aggiornato(self, dipendente: Dipendente) -> Dipendente:
+        """Lo stesso dipendente e JobOrder com'è ora nell'anagrafica (con le correzioni)."""
+        return next(
+            (d for d in self.anagrafica.dipendenti if chiave(d) == chiave(dipendente)), dipendente
+        )
+
+    def corretto(self, dipendente: Dipendente) -> bool:
+        return chiave(dipendente) in self.archivio.correzioni()
+
+    def correggi_dipendente(self, corretto: Dipendente, altre_email: Sequence[str]) -> None:
+        """Correzione salvata nell'archivio, sopra l'Excel (che non si tocca)."""
+        originale = self.originale(corretto)
+        if originale is None:
+            raise ErroreServizi(
+                "Si possono modificare solo i dipendenti dell'anagrafica: "
+                'per gli altri usa "Inserisci a mano".'
+            )
+        cf, joborder = chiave(corretto)
+        self.archivio.salva_correzione(cf, joborder, differenze(originale, corretto))
+        principale = corretto.email.strip().lower()
+        self.archivio.imposta_email_di(
+            cf, [e for e in altre_email if e.strip().lower() != principale]
+        )
+        self.archivio.registra(
+            "Dati del dipendente corretti",
+            dettaglio=f"{corretto.cognome} {corretto.nome} · JobOrder {joborder}",
+        )
+        self._applica_correzioni(self.anagrafica_excel or self.anagrafica)
+
+    def togli_correzione(self, dipendente: Dipendente) -> None:
+        cf, joborder = chiave(dipendente)
+        self.archivio.togli_correzione(cf, joborder)
+        self.archivio.registra(
+            "Tornati i dati dell'Excel",
+            dettaglio=f"{dipendente.cognome} {dipendente.nome} · JobOrder {joborder}",
+        )
+        self._applica_correzioni(self.anagrafica_excel or self.anagrafica)
+
+    # --- Indirizzi ricordati ---
+
+    @property
+    def email_note(self) -> dict[str, str]:
+        return self.archivio.email_note()
+
+    def ricorda_mittente(self, dipendente: Dipendente, mittente: str) -> str:
+        """Ricorda l'indirizzo del mittente per quel dipendente, se serve; lo restituisce."""
+        indirizzo = email_da_ricordare(
+            mittente, dipendente, self.impostazioni.domini_interni, self.email_note
+        )
+        if indirizzo:
+            self.archivio.ricorda_email(indirizzo, dipendente.cf)
+            self.archivio.registra(
+                "Indirizzo del mittente ricordato",
+                dettaglio=f"{dipendente.cognome} {dipendente.nome}",
+            )
+        return indirizzo
 
     def orario(self, dipendente: Dipendente) -> OrarioSettimanale | None:
         cliente = dipendente.cliente.strip().casefold()

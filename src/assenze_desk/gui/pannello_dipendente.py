@@ -45,10 +45,12 @@ def nome_completo(dipendente: Dipendente) -> str:
 
 class PannelloDipendente(Scheda):
     scelto = Signal(object)  # il Dipendente scelto dall'utente
+    modifica_richiesta = Signal(object)  # il Dipendente da correggere
 
     def __init__(self, anagrafica: Callable[[], Sequence[Dipendente]]) -> None:
         super().__init__("Dipendente", "persona")
         self._anagrafica = anagrafica
+        self._mostrato: Dipendente | None = None
 
         self.cerca = QLineEdit()
         self.cerca.setPlaceholderText("Cerca per cognome, nome, CF, JobOrder o cliente")
@@ -75,7 +77,12 @@ class PannelloDipendente(Scheda):
         self.a_mano = pulsante("Inserisci a mano (senza anagrafica)", "persona", "piatto")
         self.a_mano.setCheckable(True)
         self.a_mano.toggled.connect(self._mostra_modulo)
-        self.corpo.addLayout(riga(self.a_mano))
+        self.modifica = pulsante(
+            "Modifica dati", "modifica", "piatto", "Correggi i dati di questo dipendente"
+        )
+        self.modifica.clicked.connect(self._chiedi_modifica)
+        self.modifica.hide()
+        self.corpo.addLayout(riga(self.a_mano, None, self.modifica))
         self.modulo = self._modulo_manuale()
         self.corpo.addWidget(self.modulo)
         self._mostra_suggeriti(())
@@ -84,6 +91,8 @@ class PannelloDipendente(Scheda):
 
     def mostra(self, campo: Campo, motivo: str = "") -> None:
         dipendente = campo.valore if isinstance(campo.valore, Dipendente) else None
+        self._mostrato = dipendente
+        self.modifica.setHidden(dipendente is None)
         if dipendente is None:
             self.nome.setText("Nessun dipendente scelto")
             self.dettagli.setText("")
@@ -95,6 +104,10 @@ class PannelloDipendente(Scheda):
         self.avviso.setText(campo.avviso)
         self.avviso.setVisible(bool(campo.avviso))
         self._mostra_suggeriti(campo.scelte if dipendente is None else ())
+
+    def _chiedi_modifica(self) -> None:
+        if self._mostrato is not None:
+            self.modifica_richiesta.emit(self._mostrato)
 
     # --- Ricerca e suggeriti ---
 

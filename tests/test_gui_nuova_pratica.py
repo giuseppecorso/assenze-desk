@@ -324,3 +324,150 @@ def test_import_non_disponibile_con_mailto(tmp_path, distruggi):
     distruggi(finestra)
     assert not finestra.nuova_pratica.mail.importa.isEnabled()
     contesto.chiudi()
+
+
+def test_protocollo_scritto_a_mano(finestra, qtbot):
+    malattia = finestra.nuova_pratica.malattia
+    editor = malattia.campi["protocollo"].editor
+    editor.setFocus()
+    qtbot.keyClicks(editor, "452 616 891")
+    assert editor.text() == "452 616 891"  # mentre scrivi non cambia niente
+    editor.setCursorPosition(3)
+    qtbot.keyClicks(editor, "-")  # si può correggere anche nel mezzo
+    assert editor.text() == "452- 616 891"
+    qtbot.keyClick(editor, Qt.Key.Key_Return)
+    assert editor.text() == "452616891"
+    assert malattia.modulo["protocollo"].valore == "452616891"
+    assert QApplication.clipboard().text() == "452616891"
+    assert "copiato" in finestra.messaggi.testo.text()
+
+    cf = malattia.campi["cf"].editor
+    cf.setFocus()
+    qtbot.keyClicks(cf, "rssmra80a01 z999x")
+    qtbot.keyClick(cf, Qt.Key.Key_Return)
+    assert cf.text() == "RSSMRA80A01Z999X"
+
+
+# --- Mail da un indirizzo diverso e modifica dei dati ---
+
+
+def mail_da_casa(dipendente, con_cf):
+    riga_cf = f"Codice fiscale {dipendente.cf}\n" if con_cf else ""
+    return (
+        "OGG: Certificato\nDa: Qualcuno <casa.privata@example.org>\nData: 07/10/2026 09:12\n\n"
+        f"Buongiorno,\n{riga_cf}protocollo 412345678 dal 5 al 9 ottobre."
+    )
+
+
+def test_mail_da_un_indirizzo_nuovo_viene_ricordata(finestra):
+    pagina = finestra.nuova_pratica
+    dipendente = finestra.contesto.anagrafica.dipendenti[3]
+    pagina.mail.imposta_testo(mail_da_casa(dipendente, con_cf=True))
+    pagina.analizza()
+    malattia = pagina.malattia
+    assert malattia.scelta["dipendente"].valore.cf == dipendente.cf  # trovato dal CF
+    malattia.salva.click()
+    assert "anche da casa.privata@example.org" in finestra.messaggi.testo.text()
+
+    pagina.nuova_vuota()
+    pagina.mail.imposta_testo(mail_da_casa(dipendente, con_cf=False))
+    pagina.analizza()
+    assert malattia.scelta["dipendente"].valore.cf == dipendente.cf  # ora dal mittente
+    assert "mittente" in malattia.dipendente.origine.text()
+
+
+def test_modifica_dati_dal_riquadro_dipendente(finestra, monkeypatch):
+    from assenze_desk.gui import modifica_dipendente
+
+    def compila(dialogo):
+        dialogo.caselle["email"].setText("nuova@example.org")
+        dialogo.caselle["altre_email"].setText("casa@example.org")
+        dialogo.caselle["cliente"].setText("Cliente Corretto")
+        dialogo.salva.click()
+
+    monkeypatch.setattr(modifica_dipendente, "mostra_finestra", compila)
+    pagina = finestra.nuova_pratica
+    malattia = pagina.malattia
+    assert malattia.dipendente.modifica.isHidden()  # nessun dipendente: niente da modificare
+    larghezza = malattia.minimumSizeHint().width()
+    pagina.mail.importa.click()
+    assert not malattia.dipendente.modifica.isHidden()
+    assert malattia.minimumSizeHint().width() == larghezza  # la colonna non si allarga
+    origine = malattia.scelta["dipendente"].origine
+
+    malattia.dipendente.modifica.click()
+    scelto = malattia.scelta["dipendente"]
+    assert scelto.valore.cliente == "Cliente Corretto"
+    assert scelto.origine == origine  # resta automatico
+    assert "Cliente Corretto" in malattia.dipendente.dettagli.text()
+    assert "l'Excel non cambia" in finestra.messaggi.testo.text()
+    assert finestra.contesto.archivio.email_di(scelto.valore.cf) == ["casa@example.org"]
+
+    def ripristina(dialogo):
+        assert dialogo.ripristina.isVisible() or not dialogo.ripristina.isHidden()
+        dialogo.ripristina.click()
+
+    monkeypatch.setattr(modifica_dipendente, "mostra_finestra", ripristina)
+    malattia.dipendente.modifica.click()
+    assert malattia.scelta["dipendente"].valore.cliente != "Cliente Corretto"
+
+
+def test_modifica_dati_con_errori_e_annulla(finestra, monkeypatch):
+    from assenze_desk.gui import modifica_dipendente
+
+    def sbaglia(dialogo):
+        dialogo.caselle["inizio_joborder"].setText("31/02/2026")
+        dialogo.salva.click()
+        assert "Data non valida" in dialogo.errore.text()
+        dialogo.caselle["inizio_joborder"].setText("")
+        dialogo.caselle["email"].setText("senza-chiocciola")
+        dialogo.salva.click()
+        assert "@" in dialogo.errore.text()
+        dialogo.caselle["cognome"].setText("")
+        dialogo.salva.click()
+        assert "cognome" in dialogo.errore.text()
+        dialogo.annulla.click()
+
+    monkeypatch.setattr(modifica_dipendente, "mostra_finestra", sbaglia)
+    finestra.nuova_pratica.mail.importa.click()
+    malattia = finestra.nuova_pratica.malattia
+    prima = malattia.scelta["dipendente"].valore
+    malattia.dipendente.modifica.click()
+    assert malattia.scelta["dipendente"].valore == prima
+    assert finestra.contesto.archivio.correzioni() == {}
+
+
+def test_modifica_di_un_dipendente_inserito_a_mano(finestra, qtbot):
+    from assenze_desk.core.dipendenti import Dipendente as D
+
+    malattia = finestra.nuova_pratica.malattia
+    malattia._dipendente_scelto(D("ZZZZZZ80A01Z999Z", "Nuovo", "Dipendente"))
+    malattia.dipendente.modifica.click()
+    assert "solo i dipendenti dell'anagrafica" in finestra.messaggi.testo.text()
+
+
+def test_giustificativo_ricorda_il_mittente_e_si_modifica(finestra, qtbot, monkeypatch):
+    from assenze_desk.gui import modifica_dipendente
+
+    pagina = finestra.nuova_pratica
+    pagina.segmenti.pulsante(1).click()
+    giustificativo = pagina.giustificativo
+    tutti = finestra.contesto.anagrafica.dipendenti
+    nomi = [(d.nome, d.cognome) for d in tutti]
+    dipendente = next(d for d in tutti if nomi.count((d.nome, d.cognome)) == 1)  # senza omonimi
+    pagina.mail.imposta_testo(
+        f"OGG: Ferie\nDa: <altro.indirizzo@example.org>\nData: 02/10/2026 16:40\n\n"
+        f"Sono {dipendente.nome} {dipendente.cognome}, chiedo le ferie il 12 ottobre"
+    )
+    pagina.analizza()
+    assert giustificativo.scelta["dipendente"].valore.cf == dipendente.cf
+    giustificativo.salva.click()
+    assert "anche da altro.indirizzo@example.org" in finestra.messaggi.testo.text()
+
+    monkeypatch.setattr(
+        modifica_dipendente,
+        "mostra_finestra",
+        lambda d: (d.caselle["nome"].setText("Nome Nuovo"), d.salva.click()),
+    )
+    giustificativo.dipendente.modifica.click()
+    assert giustificativo.scelta["dipendente"].valore.nome == "Nome Nuovo"

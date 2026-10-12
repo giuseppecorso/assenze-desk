@@ -176,3 +176,22 @@ def test_conversioni_dei_campi(app, qtbot, tipo, testo, valore):
 
 def test_qapp_unica(app):
     assert QApplication.instance() is app
+
+
+def test_campo_di_testo_pulito_alla_fine_della_scrittura(app, qtbot):
+    campo = CampoDato("protocollo", "Protocollo", al_termine=lambda t: t.replace(" ", ""))
+    qtbot.addWidget(campo)
+    valori, finiti = [], []
+    campo.modificato.connect(lambda _nome, valore: valori.append(valore))
+    campo.scritto_a_mano.connect(lambda nome, valore: finiti.append((nome, valore)))
+    editor = campo.editor
+    editor.setFocus()
+    qtbot.keyClicks(editor, "452 616")
+    assert editor.text() == "452 616"  # mentre si scrive non cambia niente
+    assert valori[-1] == "452 616"
+    editor.editingFinished.emit()  # Invio o uscita dalla casella
+    assert editor.text() == "452616"
+    assert valori[-1] == "452616"
+    assert finiti == [("protocollo", "452616")]
+    editor.editingFinished.emit()  # uscire di nuovo senza scrivere: niente di nuovo
+    assert finiti == [("protocollo", "452616")]
