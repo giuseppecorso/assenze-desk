@@ -93,7 +93,14 @@ def importa_anagrafica(percorso: Path) -> EsitoImport:
     libro = load_workbook(percorso, read_only=True, data_only=True)
     try:
         if FOGLIO_DIPENDENTI not in libro.sheetnames:
-            raise ValueError(f"nel file manca il foglio '{FOGLIO_DIPENDENTI}'")
+            messaggio = f"nel file manca il foglio '{FOGLIO_DIPENDENTI}'"
+            if _sembra_della_v620(libro):
+                messaggio += (
+                    ": questo è il file delle pratiche o dei giustificativi della versione "
+                    "precedente, si importa da Archivio. Qui serve il file con l'elenco "
+                    "dei dipendenti"
+                )
+            raise ValueError(messaggio)
         avvisi: list[str] = []
         dipendenti = _con_periodi(
             _dipendenti(libro[FOGLIO_DIPENDENTI], avvisi), _periodi_da_altri_fogli(libro)
@@ -231,6 +238,15 @@ def _dipendenti(foglio: Worksheet, avvisi: list[str]) -> list[Dipendente]:
             )
         )
     return dipendenti
+
+
+def _sembra_della_v620(libro: Any) -> bool:
+    """Tracking delle malattie o giustificativi della v6.20, scelti per sbaglio."""
+    for foglio in libro.worksheets:
+        chiavi = {_chiave(h) for h in next(foglio.iter_rows(max_row=1, values_only=True), ())}
+        if {"protocollo", "datainizio"} <= chiavi or "tipogiustificativo" in chiavi:
+            return True
+    return False
 
 
 def _periodi_da_altri_fogli(libro: Any) -> dict[str, tuple[date | None, date | None]]:

@@ -216,6 +216,13 @@ def test_errori_chiari(tmp_path):
         importa_anagrafica(salva(tmp_path, {"Dipendenti": [["Cognome", "Nome"]]}))
 
 
+def test_scelto_il_file_delle_pratiche_al_posto_dell_anagrafica(tmp_path):
+    # Errore capitato davvero: il tracking delle malattie scelto come anagrafica
+    tracking = salva(tmp_path, {"Foglio1": [["Protocollo", "CF", "DataInizio"]]})
+    with pytest.raises(ValueError, match="si importa da Archivio"):
+        importa_anagrafica(tracking)
+
+
 def test_modello_vuoto(tmp_path):
     percorso = tmp_path / "modello.xlsx"
     scrivi_anagrafica(percorso, (), {}, {})
