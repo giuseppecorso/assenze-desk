@@ -183,8 +183,12 @@ class Contesto:
         cc: Sequence[str] = (),
         allegati: Sequence[Path] = (),
         rispondi_a: MailImportata | None = None,
+        mittente: str = "",
     ) -> tuple[str, ...]:
-        """Apre una bozza e restituisce i segnaposti rimasti senza valore."""
+        """Apre una bozza e restituisce i segnaposti rimasti senza valore.
+
+        `mittente` vale solo per le risposte in Outlook (per conto di un'altra casella);
+        con il programma di posta predefinito non si può scegliere."""
         if not a and rispondi_a is None:
             raise ErroreServizi("Mancano i destinatari della mail: aggiungili nelle Impostazioni.")
         oggetto_compilato = compila(oggetto, valori)
@@ -199,7 +203,7 @@ class Contesto:
             return _senza_doppioni(oggetto_compilato.mancanti + testo.mancanti)
         html = compila_per_outlook(corpo, valori)
         if rispondi_a is not None:
-            self.posta.bozza_risposta(rispondi_a, html.testo, cc)
+            self.posta.bozza_risposta(rispondi_a, html.testo, cc, mittente)
             return _senza_doppioni(html.mancanti)
         self.posta.bozza_nuova(a, oggetto_compilato.testo, html.testo, cc, allegati)
         return _senza_doppioni(oggetto_compilato.mancanti + html.mancanti)

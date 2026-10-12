@@ -173,6 +173,56 @@ def test_bozza_salvataggio_e_stato(finestra):
     assert "Bozza al lavoratore" in finestra.messaggi.testo.text()
 
 
+def test_risposta_con_il_cliente_in_copia_e_dalla_sua_casella(finestra):
+    pagina = finestra.nuova_pratica
+    pagina.mail.importa.click()
+    malattia = pagina.malattia
+    assert malattia.risposta_a.indice() == 0  # mail del lavoratore
+    dipendente = malattia.scelta["dipendente"].valore
+    malattia.bozza_lavoratore.click()
+    bozza = finestra.contesto.posta.bozze[-1]
+    assert bozza.cc == (dipendente.copia_cliente,)
+    assert bozza.mittente == ""
+    assert "In copia il cliente" in finestra.messaggi.testo.text()
+
+    contesto = finestra.contesto
+    contesto.impostazioni = replace(
+        contesto.impostazioni,
+        risposte=replace(contesto.impostazioni.risposte, dalla_lista_cliente=True),
+    )
+    malattia.bozza_lavoratore.click()
+    assert contesto.posta.bozze[-1].mittente == dipendente.copia_cliente
+
+
+def test_mail_girata_da_un_collega(finestra):
+    pagina = finestra.nuova_pratica
+    pagina.mail.imposta_testo(
+        "Da: Collega <collega@azienda.example>\nData: 07/10/2026 09:12\n\n"
+        "Ti giro il certificato protocollo 412345678 dal 5 al 9 ottobre."
+    )
+    pagina.analizza()
+    malattia = pagina.malattia
+    assert malattia.risposta_a.indice() == 1  # mittente interno: si propone il collega
+    assert malattia.bozza_lavoratore.text() == "Bozza al collega"
+    malattia.bozza_lavoratore.click()
+    bozza = finestra.contesto.posta.bozze[-1]
+    assert bozza.a == ("collega@azienda.example",)
+    assert bozza.cc == ()
+    assert "prendo in carico" in bozza.corpo_html
+    malattia.risposta_a.pulsante(0).click()  # l'utente può sempre cambiare
+    assert malattia.bozza_lavoratore.text() == "Bozza al lavoratore"
+
+
+def test_nessuna_risposta(finestra):
+    pagina = finestra.nuova_pratica
+    pagina.mail.importa.click()
+    assert pagina.stato.text() == "Da inviare"
+    pagina.malattia.nessuna_risposta.click()
+    assert pagina.stato.text() != "Da inviare"
+    assert finestra.contesto.archivio.storico()[0].azione == "Risposta non necessaria"
+    assert finestra.contesto.posta.bozze == []  # nessuna bozza aperta
+
+
 def test_salvare_senza_protocollo_mostra_l_errore(finestra):
     finestra.nuova_pratica.malattia.salva.click()
     assert finestra.messaggi.isVisible()

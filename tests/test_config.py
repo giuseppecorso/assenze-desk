@@ -9,6 +9,7 @@ from assenze_desk.adapters.inps import URL_PORTALE_INPS
 from assenze_desk.config import (
     CartelleOutlook,
     Ocr,
+    Risposte,
     carica_impostazioni,
     cartella_dati_predefinita,
     impostazioni_predefinite,
@@ -158,6 +159,26 @@ def test_voci_dell_interfaccia(tmp_path, cartella):
     assert carica_impostazioni(file, cartella) == (imp, [])
 
 
+def test_risposte_al_lavoratore_e_ai_colleghi(tmp_path, cartella):
+    imp = impostazioni_predefinite(cartella)
+    assert imp.risposte == Risposte(dalla_lista_cliente=False, mittente_collega="")
+    assert "{" not in imp.template.corpo_collega  # testo breve, senza dati della pratica
+
+    file = scrivi(
+        tmp_path,
+        {
+            "risposte": {"dalla_lista_cliente": True, "mittente_collega": "io@example.com"},
+            "template": {"corpo_collega": "Ciao, grazie!"},
+        },
+    )
+    imp, avvisi = carica_impostazioni(file, cartella)
+    assert avvisi == []
+    assert imp.risposte == Risposte(True, "io@example.com")
+    assert imp.template.corpo_collega == "Ciao, grazie!"
+    salva_impostazioni(imp, file)
+    assert carica_impostazioni(file, cartella) == (imp, [])
+
+
 def test_regole_per_l_analisi(tmp_path, cartella):
     file = scrivi(tmp_path, {"giorni_avanti_permessi": 30, "protocollo": {"lunghezza": 10}})
     imp, _ = carica_impostazioni(file, cartella)
@@ -190,6 +211,8 @@ def test_voce_sconosciuta_avviso(tmp_path, cartella):
         ({"tema": "blu"}, "tema"),
         ({"posta": "piccione"}, "posta"),
         ({"cartelle_outlook": {"malattie": 3}}, "cartelle_outlook"),
+        ({"risposte": {"dalla_lista_cliente": "forse"}}, "risposte"),
+        ({"risposte": {"inventata": 1}}, "risposte"),
     ],
 )
 def test_valore_non_valido_errore_con_la_voce(tmp_path, cartella, contenuto, voce):

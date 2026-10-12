@@ -238,8 +238,14 @@ def test_impostazioni_si_salvano_e_si_applicano(finestra):
     regole.soglia.setValue(5)
     mail = sezione.pagine[2]
     mail.destinatari.setText("personale@example.com; copia@example.com")
+    mail.dalla_lista_cliente.setChecked(True)
+    mail.mittente_collega.setText(" io@example.com ")
+    mail.corpo_collega.setPlainText("Ciao, grazie!")
     sezione.salva.click()
     imp = finestra.contesto.impostazioni
+    assert imp.risposte.dalla_lista_cliente
+    assert imp.risposte.mittente_collega == "io@example.com"
+    assert imp.template.corpo_collega == "Ciao, grazie!"
     assert imp.soglia_ufficio == 5
     assert imp.ufficio.destinatari == ("personale@example.com", "copia@example.com")
     assert finestra.contesto.archivio.soglia_ufficio == 5

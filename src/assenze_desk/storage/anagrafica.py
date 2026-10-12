@@ -7,6 +7,8 @@ Fogli del file:
   Inizio JobOrder / Data inizio, Fine JobOrder / Data fine.
 - "Orari" (facoltativo): Cliente e ore di lavoro da Lunedì a Domenica.
 - "Capienze" (facoltativo): JobOrder e ore residue per tipo (Ferie, ROL, ...).
+- "Clienti" (facoltativo): Cliente e DL, gli indirizzi del cliente da mettere in
+  copia nelle risposte al lavoratore; vince sulla colonna DL dei dipendenti.
 
 Compatibile con il file di configurazione della v6.20 (anche .xlsm): se il
 foglio "Dipendenti" non ha le date dei JobOrder, si prendono dal primo altro
@@ -38,6 +40,7 @@ from assenze_desk.core.turni import OrarioSettimanale
 FOGLIO_DIPENDENTI = "Dipendenti"
 FOGLIO_ORARI = "Orari"
 FOGLIO_CAPIENZE = "Capienze"
+FOGLIO_CLIENTI = "Clienti"
 
 _ALIAS = {
     "cf": {"cf", "codicefiscale"},
@@ -56,6 +59,7 @@ _ALIAS = {
         "dtinizio",
         "datainiziocontratto",
     },
+    "copia": {"dl", "distlist", "distributionlist", "copiacliente", "listacliente"},
     "fine": {
         "finejoborder",
         "datafine",
@@ -75,6 +79,7 @@ _INTESTAZIONI_DIPENDENTI = [
     "Cliente",
     "Inizio JobOrder",
     "Fine JobOrder",
+    "DL",
 ]
 _NOMI_GIORNI = ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica"]
 
@@ -105,6 +110,8 @@ def importa_anagrafica(percorso: Path) -> EsitoImport:
         dipendenti = _con_periodi(
             _dipendenti(libro[FOGLIO_DIPENDENTI], avvisi), _periodi_da_altri_fogli(libro)
         )
+        if FOGLIO_CLIENTI in libro.sheetnames:
+            dipendenti = _con_copie(dipendenti, _copie_clienti(libro[FOGLIO_CLIENTI]))
         orari = _orari(libro[FOGLIO_ORARI]) if FOGLIO_ORARI in libro.sheetnames else {}
         capienze = _capienze(libro[FOGLIO_CAPIENZE]) if FOGLIO_CAPIENZE in libro.sheetnames else {}
     finally:
@@ -134,6 +141,7 @@ def scrivi_anagrafica(
                 d.cliente,
                 d.inizio_joborder,
                 d.fine_joborder,
+                d.copia_cliente,
             ]
         )
     for cella in (*foglio["G"][1:], *foglio["H"][1:]):
@@ -235,6 +243,7 @@ def _dipendenti(foglio: Worksheet, avvisi: list[str]) -> list[Dipendente]:
                 cliente=_testo(campo(riga, "cliente")),
                 inizio_joborder=_data(campo(riga, "inizio")),
                 fine_joborder=_data(campo(riga, "fine")),
+                copia_cliente=_testo(campo(riga, "copia")),
             )
         )
     return dipendenti
@@ -252,7 +261,7 @@ def _sembra_della_v620(libro: Any) -> bool:
 def _periodi_da_altri_fogli(libro: Any) -> dict[str, tuple[date | None, date | None]]:
     """JobOrder → (inizio, fine) dal primo foglio che li contiene, come nella v6.20."""
     for nome in libro.sheetnames:
-        if nome in (FOGLIO_DIPENDENTI, FOGLIO_ORARI, FOGLIO_CAPIENZE):
+        if nome in (FOGLIO_DIPENDENTI, FOGLIO_ORARI, FOGLIO_CAPIENZE, FOGLIO_CLIENTI):
             continue
         foglio = libro[nome]
         colonne = _colonne(next(foglio.iter_rows(max_row=1, values_only=True), ()))
@@ -289,6 +298,27 @@ def _con_periodi(
             )
         )
     return completati
+
+
+def _copie_clienti(foglio: Worksheet) -> dict[str, str]:
+    """Cliente (normalizzato) → indirizzi da mettere in copia."""
+    colonne = _colonne(next(foglio.iter_rows(max_row=1, values_only=True), ()))
+    if not {"cliente", "copia"} <= colonne.keys():
+        return {}
+    copie = {}
+    for _numero, riga in _righe(foglio):
+        cliente = normalizza(_testo(riga[colonne["cliente"]]))
+        copia = _testo(riga[colonne["copia"]]) if colonne["copia"] < len(riga) else ""
+        if cliente and copia:
+            copie[cliente] = copia
+    return copie
+
+
+def _con_copie(dipendenti: list[Dipendente], copie: Mapping[str, str]) -> list[Dipendente]:
+    return [
+        replace(d, copia_cliente=copie.get(normalizza(d.cliente), d.copia_cliente))
+        for d in dipendenti
+    ]
 
 
 def _orari(foglio: Worksheet) -> dict[str, OrarioSettimanale]:

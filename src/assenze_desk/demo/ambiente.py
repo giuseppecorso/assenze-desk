@@ -49,6 +49,7 @@ class BozzaDemo:
     cc: tuple[str, ...] = ()
     allegati: tuple[Path, ...] = ()
     risposta_a: str = ""  # EntryID della mail a cui risponde
+    mittente: str = ""  # casella per conto della quale si risponde
 
 
 class PostaDemo:
@@ -100,11 +101,19 @@ class PostaDemo:
         destinazione = nome_libero(Path(cartella) / f"certificato_{atteso['protocollo']}.pdf")
         return [scrivi_certificato_finto(certificato, destinazione)]
 
-    def bozza_risposta(self, mail: MailImportata, corpo_html: str, cc: Sequence[str] = ()) -> None:
+    def bozza_risposta(
+        self, mail: MailImportata, corpo_html: str, cc: Sequence[str] = (), mittente: str = ""
+    ) -> None:
         demo = self._ritrova(mail)
         self.bozze.append(
             BozzaDemo(
-                (demo.mittente,), f"R: {mail.oggetto}", corpo_html, tuple(cc), (), mail.entry_id
+                (demo.mittente,),
+                f"R: {mail.oggetto}",
+                corpo_html,
+                tuple(cc),
+                (),
+                mail.entry_id,
+                mittente,
             )
         )
         log.info("Demo: bozza di risposta pronta (Outlook non viene aperto)")

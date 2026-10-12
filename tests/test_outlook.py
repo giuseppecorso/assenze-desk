@@ -81,7 +81,16 @@ def test_la_risposta_va_alla_mail_importata_anche_se_la_selezione_cambia(mail_a,
     bozza = mail_a.risposte[0]
     assert bozza.HTMLBody == "<p>Gentile Luca,</p><p>messaggio originale</p>"
     assert bozza.CC == "ufficio@example.com"
+    assert bozza.SentOnBehalfOfName == ""  # mittente: quello predefinito di Outlook
     assert bozza.mostrata  # aperta come bozza, mai inviata
+
+
+def test_risposta_per_conto_di_un_altra_casella(mail_a):
+    # Come nella v6.20: la risposta parte dalla casella del cliente (lista DL)
+    app = OutlookFinto(mail_a)
+    outlook = Outlook(app)
+    outlook.bozza_risposta(outlook.mail_selezionata(), "<p>Ok</p>", mittente="alfa@example.com")
+    assert mail_a.risposte[0].SentOnBehalfOfName == "alfa@example.com"
 
 
 def test_mail_importata_non_piu_trovata_nessun_ripiego_sulla_selezione(mail_a, mail_b):

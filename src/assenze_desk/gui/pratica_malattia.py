@@ -30,12 +30,14 @@ from assenze_desk.core.certificato import TIPI, DatiCertificato
 from assenze_desk.core.date_utente import AVVISO_FINE_PRIMA, controlla_periodo
 from assenze_desk.core.dipendenti import Dipendente, trova_dipendente
 from assenze_desk.core.episodio import Certificato, Episodio
+from assenze_desk.core.risposte import da_collega, scegli_risposta
 from assenze_desk.core.stato import Stato, calcola_stato, serve_mail_ufficio
 from assenze_desk.gui.componenti import (
     Avviso,
     BarraMessaggi,
     CampoDato,
     Scheda,
+    Segmenti,
     etichetta,
     pulsante,
     riga,
@@ -158,11 +160,20 @@ class PraticaMalattia(QWidget):
 
     def _scheda_azioni(self) -> Scheda:
         scheda = Scheda("Azioni")
+        self.risposta_a = Segmenti(["Lavoratore", "Collega"])
+        self.risposta_a.cambiato.connect(lambda _indice: self._ridisegna())
+        self.nessuna_risposta = pulsante(
+            "Nessuna risposta", "chiudi", "piatto", "La risposta non serve: segnala come fatta"
+        )
+        scheda.corpo.addLayout(
+            riga(etichetta("Risposta a", "secondario"), self.risposta_a, self.nessuna_risposta)
+        )
         self.bozza_lavoratore = pulsante("Bozza al lavoratore", "mail")
         self.bozza_ufficio = pulsante("Bozza all'ufficio", "mail")
         self.sposta = pulsante("Sposta mail", "sposta")
         self.salva = pulsante("Salva pratica", "salva", "primario")
         scheda.corpo.addLayout(riga(self.bozza_lavoratore, self.bozza_ufficio, self.sposta))
+        self.nessuna_risposta.clicked.connect(lambda: esegui(self.messaggi, self._senza_risposta))
         nota = etichetta("Le mail restano bozze: le invii tu.", "secondario")
         scheda.corpo.addLayout(riga(nota, None, self.salva))
         self.bozza_lavoratore.clicked.connect(lambda: esegui(self.messaggi, self._bozza_lavoratore))
@@ -181,6 +192,10 @@ class PraticaMalattia(QWidget):
             proposte = unisci(proposte, proposte_certificato(self._dati_pdf))
         self._base = proposte
         self._trova_dipendente()
+        # Mail girata da un collega (mittente interno): si propone la risposta breve a lui
+        interni = self.contesto.impostazioni.domini_interni
+        collega = da_collega(info.mittente, self._dipendente(), interni)
+        self.risposta_a.seleziona(1 if collega else 0)
         self._ridisegna()
 
     def carica_pdf(self, percorso: Path) -> bool:
@@ -300,18 +315,38 @@ class PraticaMalattia(QWidget):
         )
 
     def _bozza_lavoratore(self) -> None:
-        dipendente = self._dipendente()
-        destinatario = (dipendente.email if dipendente else "") or self._info.mittente
-        template = self.contesto.impostazioni.template
+        imp = self.contesto.impostazioni
+        collega = self.risposta_a.indice() == 1
+        risposta = scegli_risposta(
+            dipendente=self._dipendente(),
+            mittente_mail=self._info.mittente,
+            collega=collega,
+            dalla_lista_cliente=imp.risposte.dalla_lista_cliente,
+            mittente_collega=imp.risposte.mittente_collega,
+        )
         mancanti = self.contesto.crea_bozza(
-            a=[destinatario] if destinatario else [],
-            oggetto=template.oggetto_lavoratore,
-            corpo=template.corpo_lavoratore,
+            a=risposta.a,
+            cc=risposta.cc,
+            oggetto=imp.template.oggetto_lavoratore,
+            corpo=imp.template.corpo_collega if collega else imp.template.corpo_lavoratore,
             valori=self._valori_bozza(),
             rispondi_a=self._info.mail,
+            mittente=risposta.mittente,
         )
         self._mail_lavoratore = True
-        self._dopo_bozza("Bozza al lavoratore aperta.", mancanti)
+        testo = "Bozza al collega aperta." if collega else "Bozza al lavoratore aperta."
+        if risposta.cc:
+            testo += f" In copia il cliente: {', '.join(risposta.cc)}."
+        self._dopo_bozza(testo, mancanti)
+
+    def _senza_risposta(self) -> None:
+        self._mail_lavoratore = True
+        protocollo = self.modulo["protocollo"].valore
+        if protocollo:
+            self._salva()
+        self.contesto.archivio.registra("Risposta non necessaria", str(protocollo or ""))
+        self._ridisegna()
+        self.messaggi.mostra("Risposta segnata come non necessaria.", "ok")
 
     def _bozza_ufficio(self) -> None:
         if self.modulo["protocollo"].valore:
@@ -474,6 +509,8 @@ class PraticaMalattia(QWidget):
             f"Oltre {soglia} giorni: serve anche la mail all'ufficio." if lungo else ""
         )
         self.bozza_ufficio.setEnabled(lungo)
+        collega = self.risposta_a.indice() == 1
+        self.bozza_lavoratore.setText("Bozza al collega" if collega else "Bozza al lavoratore")
         self.sposta.setEnabled(self._info.mail is not None and self.contesto.outlook_disponibile)
         self.stato_cambiato.emit(str(self._stato()))
 
@@ -487,6 +524,7 @@ class PraticaMalattia(QWidget):
         self._base, self._info, self._testo, self._motivo = {}, InfoMail(), "", ""
         self._pdf = self._dati_pdf = None
         self._mail_lavoratore = self._mail_ufficio = False
+        self.risposta_a.seleziona(0)
         self.scaricati.hide()
         self.pdf_cambiato.emit(None)
         self._ridisegna()

@@ -46,6 +46,16 @@ class CartelleOutlook:
     giustificativi: str = ""
 
 
+@dataclass(frozen=True)
+class Risposte:
+    """Risposta al lavoratore: dalla casella del cliente (la sua lista DL, se in
+    Outlook si può inviare per conto di quella casella) e, per le mail arrivate
+    da un collega, l'indirizzo da cui rispondere (vuoto = quello predefinito)."""
+
+    dalla_lista_cliente: bool = False
+    mittente_collega: str = ""
+
+
 TEMI = ("sistema", "chiaro", "scuro")
 POSTA = ("outlook", "mailto")
 
@@ -76,6 +86,10 @@ class Template:
         "Protocolli: {PROTOCOLLI}.\n\n"
         "Cordiali saluti"
     )
+    # Mail girata da un collega: risposta breve a lui, non al lavoratore
+    corpo_collega: str = (
+        "Ciao,\n\ngrazie per la comunicazione: prendo in carico.\n\nCordiali saluti"
+    )
     oggetto_giustificativo: str = "Ricezione richiesta di {TIPO}"
     corpo_giustificativo: str = (
         "Gentile {NOME},\n\n"
@@ -104,6 +118,7 @@ class Impostazioni:
     tema: str = "sistema"  # sistema, chiaro, scuro
     posta: str = "outlook"  # outlook (Outlook Classic) oppure mailto (programma predefinito)
     cartelle_outlook: CartelleOutlook = CartelleOutlook()
+    risposte: Risposte = Risposte()
 
 
 def cartella_dati_predefinita() -> Path:
@@ -291,6 +306,18 @@ def _cartelle_outlook(valore: Any, predefinite: Impostazioni, _cartella: Path):
     return "cartelle_outlook", CartelleOutlook(**attuali)
 
 
+def _risposte(valore: Any, predefinite: Impostazioni, _cartella: Path):
+    attuali = {
+        "dalla_lista_cliente": predefinite.risposte.dalla_lista_cliente,
+        "mittente_collega": predefinite.risposte.mittente_collega,
+    }
+    for nome, dato in valore.items():
+        if nome not in attuali or type(dato) is not type(attuali[nome]):
+            raise ValueError(f"voce non valida: {nome}")
+        attuali[nome] = dato
+    return "risposte", Risposte(**attuali)
+
+
 def _template(valore: Any, predefinite: Impostazioni, _cartella: Path):
     nomi = {f.name for f in fields(Template)}
     testi = {
@@ -317,6 +344,7 @@ _CONVERSIONI = {
     "tema": _scelta("tema", TEMI),
     "posta": _scelta("posta", POSTA),
     "cartelle_outlook": _cartelle_outlook,
+    "risposte": _risposte,
 }
 
 
@@ -360,6 +388,10 @@ def _in_dizionario(imp: Impostazioni) -> dict[str, Any]:
         "cartelle_outlook": {
             "malattie": imp.cartelle_outlook.malattie,
             "giustificativi": imp.cartelle_outlook.giustificativi,
+        },
+        "risposte": {
+            "dalla_lista_cliente": imp.risposte.dalla_lista_cliente,
+            "mittente_collega": imp.risposte.mittente_collega,
         },
     }
 

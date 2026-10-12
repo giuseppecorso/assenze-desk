@@ -110,6 +110,24 @@ def test_periodi_dei_joborder_in_un_altro_foglio_come_nella_v620(tmp_path):
     ]
 
 
+def test_lista_del_cliente_in_copia_come_nella_v620(tmp_path):
+    # La colonna DL dei dipendenti; il foglio "Clienti" (Clienti + DL) vince
+    percorso = salva(
+        tmp_path,
+        {
+            "Dipendenti": [
+                ["CF", "Cognome", "JobOrder", "Cliente", "DL"],
+                [CF_LUCA, "Fittizio", "201111111", "Alfa Srl", "alfa.vecchia@example.com"],
+                [CF_LUCA, "Fittizio", "202222222", "Beta Spa", "beta@example.com"],
+                [CF_LUCA, "Fittizio", "203333333", "Gamma Srl", None],
+            ],
+            "Clienti": [["clienti", "DL"], ["ALFA SRL ", "alfa@example.com; capo@example.com"]],
+        },
+    )
+    copie = [d.copia_cliente for d in importa_anagrafica(percorso).dipendenti]
+    assert copie == ["alfa@example.com; capo@example.com", "beta@example.com", ""]
+
+
 def test_le_date_nel_foglio_dipendenti_vincono(tmp_path):
     percorso = salva(
         tmp_path,

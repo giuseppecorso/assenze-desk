@@ -40,6 +40,7 @@ class Dipendente:
     cliente: str = ""
     inizio_joborder: date | None = None
     fine_joborder: date | None = None
+    copia_cliente: str = ""  # indirizzi del cliente in copia nelle risposte (lista DL)
 
     def __post_init__(self) -> None:
         if not self.cf.strip():
@@ -109,7 +110,7 @@ def _cf(valore: str) -> str:
     return valore.strip().upper()
 
 
-def _interno(email: str, domini_interni: Sequence[str]) -> bool:
+def indirizzo_interno(email: str, domini_interni: Sequence[str]) -> bool:
     dominio = email.rpartition("@")[2].lower()
     return any(dominio == d.lower() or dominio.endswith("." + d.lower()) for d in domini_interni)
 
@@ -121,7 +122,7 @@ def _per_mittente(
     indirizzi += _EMAIL.findall(testo)
     for indirizzo in indirizzi:
         indirizzo = indirizzo.strip().lower()
-        if _interno(indirizzo, domini_interni):
+        if indirizzo_interno(indirizzo, domini_interni):
             continue
         trovati = [d for d in anagrafica if d.email and d.email.strip().lower() == indirizzo]
         if trovati:

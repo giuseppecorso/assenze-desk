@@ -54,6 +54,7 @@ class Bozza:
     def __init__(self):
         self.To = ""
         self.CC = ""
+        self.SentOnBehalfOfName = ""
         self.Subject = ""
         self.HTMLBody = ""
         self.Attachments = RaccoltaAllegatiBozza()

@@ -106,12 +106,18 @@ class Outlook:
 
     # --- Bozze: mai invii ---
 
-    def bozza_risposta(self, mail: MailImportata, corpo_html: str, cc: Sequence[str] = ()) -> None:
+    def bozza_risposta(
+        self, mail: MailImportata, corpo_html: str, cc: Sequence[str] = (), mittente: str = ""
+    ) -> None:
+        """`mittente`: casella per conto della quale rispondere (vuoto = quella predefinita);
+        Outlook la accetta solo se l'utente ha il permesso di inviare per suo conto."""
         with self._app() as app:
             risposta = self._ritrova(app, mail).Reply()
             risposta.HTMLBody = corpo_html + (risposta.HTMLBody or "")
             if cc:
                 risposta.CC = "; ".join(cc)
+            if mittente:
+                risposta.SentOnBehalfOfName = mittente
             risposta.Display(False)
 
     def bozza_nuova(

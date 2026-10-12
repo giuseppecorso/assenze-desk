@@ -12,7 +12,7 @@ core la legga correttamente. La data di riferimento arriva come argomento.
 
 import random
 import string
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import date, datetime, time, timedelta
 from typing import Any
 
@@ -44,6 +44,12 @@ NOMI = (
     ("Elena", "F"),
     ("Chiara", "F"),
 )
+COPIE_CLIENTI = {
+    "Alfa Srl": "personale.alfa@example.com",
+    "Beta Spa": "personale.beta@example.com",
+    "Gamma Srl": "personale.gamma@example.com",
+    "Delta Coop": "personale.delta@example.com",
+}
 ORARI_CLIENTI = {
     "Alfa Srl": OrarioSettimanale((480, 480, 480, 480, 480, 0, 0)),
     "Beta Spa": OrarioSettimanale((480, 480, 480, 480, 480, 240, 0)),
@@ -114,18 +120,18 @@ def _anagrafica(caso: random.Random, oggi: date, quanti: int) -> tuple[Dipendent
         while cf in codici:  # doppione: capita una volta su miliardi
             cf = cf_finto(caso, sesso)  # pragma: no cover
         codici.add(cf)
-        righe.append(
-            Dipendente(
-                cf=cf,
-                cognome=cognome,
-                nome=nome,
-                email=f"{nome}.{cognome}{numero}@example.com".lower(),
-                joborder=f"20{caso.randint(0, 9_999_999):07d}",
-                cliente=caso.choice(tuple(ORARI_CLIENTI)),
-                inizio_joborder=oggi - timedelta(days=caso.randint(30, 300)),
-                fine_joborder=oggi + timedelta(days=caso.randint(90, 300)),
-            )
+        dipendente = Dipendente(
+            cf=cf,
+            cognome=cognome,
+            nome=nome,
+            email=f"{nome}.{cognome}{numero}@example.com".lower(),
+            joborder=f"20{caso.randint(0, 9_999_999):07d}",
+            cliente=caso.choice(tuple(ORARI_CLIENTI)),
+            inizio_joborder=oggi - timedelta(days=caso.randint(30, 300)),
+            fine_joborder=oggi + timedelta(days=caso.randint(90, 300)),
         )
+        # Lista del cliente in copia nelle risposte (colonna DL)
+        righe.append(replace(dipendente, copia_cliente=COPIE_CLIENTI[dipendente.cliente]))
     return tuple(righe)
 
 

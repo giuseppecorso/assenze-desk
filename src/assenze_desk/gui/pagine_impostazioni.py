@@ -13,6 +13,7 @@ from pathlib import Path
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QAbstractItemView,
+    QCheckBox,
     QComboBox,
     QFileDialog,
     QFormLayout,
@@ -27,7 +28,14 @@ from PySide6.QtWidgets import (
 )
 
 from assenze_desk.adapters.ocr import trova_tesseract
-from assenze_desk.config import CartelleOutlook, Impostazioni, MailUfficio, Ocr, Percorsi
+from assenze_desk.config import (
+    CartelleOutlook,
+    Impostazioni,
+    MailUfficio,
+    Ocr,
+    Percorsi,
+    Risposte,
+)
 from assenze_desk.core.giustificativi import TipoGiustificativo
 from assenze_desk.core.identificativi import RegolaNumero
 from assenze_desk.core.vocabolario import VOCABOLARIO, Vocabolario
@@ -230,6 +238,29 @@ class PaginaMail(Pagina):
         forma.addRow("Cartella Outlook giustificativi", self.cartella_giustificativi)
         self.corpo.addWidget(destinatari)
 
+        risposte = Scheda("Risposte alle mail di malattia", "mail")
+        forma = _modulo(risposte)
+        self.dalla_lista_cliente = QCheckBox(
+            "Rispondi al lavoratore dalla casella del cliente (primo indirizzo della colonna DL)"
+        )
+        self.mittente_collega = QLineEdit()
+        self.mittente_collega.setPlaceholderText("vuoto = la tua casella predefinita")
+        self.corpo_collega = QPlainTextEdit()
+        self.corpo_collega.setFixedHeight(90)
+        forma.addRow(self.dalla_lista_cliente)
+        forma.addRow(
+            etichetta(
+                "Il cliente (colonna DL o foglio Clienti dell'anagrafica) va sempre in copia "
+                "nella risposta al lavoratore. In Outlook serve il permesso di inviare per "
+                "conto della sua casella.",
+                "secondario",
+                a_capo=True,
+            )
+        )
+        forma.addRow("Risposte ai colleghi: da", self.mittente_collega)
+        forma.addRow("Risposte ai colleghi: testo", self.corpo_collega)
+        self.corpo.addWidget(risposte)
+
         template = Scheda("Template delle bozze", "file")
         template.corpo.addWidget(
             etichetta(
@@ -258,6 +289,9 @@ class PaginaMail(Pagina):
         self.domini.setText(testo_elenco(imp.domini_interni))
         self.cartella_malattie.setText(imp.cartelle_outlook.malattie)
         self.cartella_giustificativi.setText(imp.cartelle_outlook.giustificativi)
+        self.dalla_lista_cliente.setChecked(imp.risposte.dalla_lista_cliente)
+        self.mittente_collega.setText(imp.risposte.mittente_collega)
+        self.corpo_collega.setPlainText(imp.template.corpo_collega)
         for nome, _testo in self.TEMPLATE:
             self.oggetti[nome].setText(getattr(imp.template, f"oggetto_{nome}"))
             self.corpi[nome].setPlainText(getattr(imp.template, f"corpo_{nome}"))
@@ -267,6 +301,7 @@ class PaginaMail(Pagina):
             imp.template,
             **{f"oggetto_{nome}": self.oggetti[nome].text() for nome, _t in self.TEMPLATE},
             **{f"corpo_{nome}": self.corpi[nome].toPlainText() for nome, _t in self.TEMPLATE},
+            corpo_collega=self.corpo_collega.toPlainText(),
         )
         return replace(
             imp,
@@ -276,6 +311,9 @@ class PaginaMail(Pagina):
                 self.cartella_malattie.text().strip(), self.cartella_giustificativi.text().strip()
             ),
             template=template,
+            risposte=Risposte(
+                self.dalla_lista_cliente.isChecked(), self.mittente_collega.text().strip()
+            ),
         )
 
 
