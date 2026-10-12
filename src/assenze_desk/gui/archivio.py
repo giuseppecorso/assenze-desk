@@ -6,8 +6,10 @@ storico, si esporta in Excel ciò che i filtri mostrano; per i giustificativi
 si correggono le ore e si eliminano righe (con conferma).
 """
 
+import logging
 from collections.abc import Callable, Sequence
 from datetime import date
+from pathlib import Path
 
 from PySide6.QtCore import Qt, QUrl, Signal
 from PySide6.QtGui import QColor, QDesktopServices, QFont
@@ -15,6 +17,7 @@ from PySide6.QtWidgets import (
     QAbstractItemView,
     QCheckBox,
     QComboBox,
+    QFileDialog,
     QHeaderView,
     QInputDialog,
     QLineEdit,
@@ -43,6 +46,8 @@ from assenze_desk.gui.componenti import (
 from assenze_desk.gui.errori import esegui
 from assenze_desk.servizi import Contesto
 from assenze_desk.storage.archivio import Pratica, RigaSalvata
+
+log = logging.getLogger(__name__)
 
 STATO_AUTOMATICO = "Stato automatico"
 
@@ -82,21 +87,36 @@ class Archivio(QWidget):
         messaggi: BarraMessaggi,
         conferma: Callable[[str], bool] | None = None,
         chiedi_ore: Callable[[str], str | None] | None = None,
+        scegli_file: Callable[[], list[Path]] | None = None,
     ) -> None:
         super().__init__()
         self.contesto, self.messaggi = contesto, messaggi
         # Finestre di dialogo aperte solo da un clic dell'utente; sostituibili nei test
         self._conferma = conferma or self._conferma_utente
         self._chiedi_ore = chiedi_ore or self._chiedi_ore_utente
+        self._scegli_file = scegli_file or self._scegli_file_utente
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(24, 16, 24, 12)
         layout.setSpacing(12)
         self.tipo = Segmenti(["Malattie", "Giustificativi"])
         self.esporta = pulsante("Esporta in Excel", "scarica")
+        self.importa = pulsante(
+            "Importa dalla versione precedente…",
+            "cartella",
+            "piatto",
+            "Pratiche e giustificativi dai file Excel della vecchia versione",
+        )
         self.conteggio = etichetta("", "secondario")
         layout.addLayout(
-            riga(etichetta("Archivio", "titolo"), self.tipo, None, self.conteggio, self.esporta)
+            riga(
+                etichetta("Archivio", "titolo"),
+                self.tipo,
+                None,
+                self.conteggio,
+                self.importa,
+                self.esporta,
+            )
         )
 
         self.cerca = QLineEdit()
@@ -128,6 +148,7 @@ class Archivio(QWidget):
 
         self.tipo.cambiato.connect(self._cambia_tipo)
         self.esporta.clicked.connect(lambda: esegui(self.messaggi, self._esporta))
+        self.importa.clicked.connect(lambda: esegui(self.messaggi, self._importa))
         for casella in (self.cerca, self.dal, self.al):
             casella.textChanged.connect(self.aggiorna)
         self.stato.currentIndexChanged.connect(self.aggiorna)
@@ -394,11 +415,40 @@ class Archivio(QWidget):
             ("Apri la cartella", lambda: QDesktopServices.openUrl(url)),
         )
 
+    # --- Import dalla versione precedente ---
+
+    def _importa(self) -> None:
+        file = self._scegli_file()
+        if not file:
+            return
+        esiti, scartate = [], 0
+        for percorso in file:
+            dati, esito = self.contesto.importa_v620(percorso)
+            cosa = "pratiche" if dati.tipo == "malattie" else "righe di giustificativi"
+            esiti.append(f"{esito.nuove} {cosa} nuove, {esito.gia_presenti} già presenti")
+            for avviso in dati.avvisi:
+                log.warning("Import da %s: %s", percorso.name, avviso)
+            scartate += len(dati.avvisi)
+        self.aggiorna()
+        testo = f"Import completato: {'; '.join(esiti)}."
+        if scartate:
+            testo += f" {scartate} righe non importate: i motivi sono nel log."
+        self.messaggi.mostra(testo, "attenzione" if scartate else "ok")
+
     # --- Dialoghi aperti solo da un clic ---
 
     def _conferma_utente(self, domanda: str) -> bool:
         risposta = QMessageBox.question(self, "Archivio", domanda)
         return risposta == QMessageBox.StandardButton.Yes
+
+    def _scegli_file_utente(self) -> list[Path]:
+        file, _filtro = QFileDialog.getOpenFileNames(
+            self,
+            "File della versione precedente (tracking malattie e giustificativi)",
+            "",
+            "Excel (*.xlsx *.xlsm)",
+        )
+        return [Path(f) for f in file]
 
     def _chiedi_ore_utente(self, attuali: str) -> str | None:
         testo, ok = QInputDialog.getText(

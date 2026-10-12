@@ -4,6 +4,7 @@ from dataclasses import replace
 from datetime import date, datetime
 
 import pytest
+from openpyxl import Workbook
 from PySide6.QtCore import Qt
 
 from assenze_desk.core.stato import Stato
@@ -136,6 +137,41 @@ def test_giustificativi_correggere_eliminare_esportare(qapp, tmp_path, distruggi
 
     archivio.esporta.click()
     assert archivio.righe.rowCount() == 0  # esportate: non sono più "da esportare"
+    contesto.chiudi()
+
+
+def test_importa_dalla_versione_precedente(qapp, tmp_path, distruggi):
+    contesto, _ = apri_contesto(
+        tmp_path / "dati", demo=True, oggi=OGGI, adesso=Orologio(), apri_url=lambda _url: None
+    )
+    libro = Workbook()
+    libro.active.append(["Protocollo", "CF", "DataInizio", "DataFine", "MailLav"])
+    libro.active.append(["499999991", "FNTPRV80A01Z999Y", "01/10/2026", "03/10/2026", "SI"])
+    libro.active.append([None, "FNTPRV80A01Z999Y", "01/10/2026", None, None])
+    tracking = tmp_path / "tracking.xlsx"
+    libro.save(tracking)
+    altro = tmp_path / "altro.xlsx"
+    Workbook().save(altro)
+
+    scelti: list = []
+    messaggi = BarraMessaggi()
+    distruggi(messaggi)
+    archivio = Archivio(contesto, messaggi, scegli_file=lambda: scelti)
+    distruggi(archivio)
+    prima = archivio.pratiche.rowCount()
+
+    archivio.importa.click()  # nessun file scelto: non succede niente
+    assert archivio.pratiche.rowCount() == prima
+
+    scelti[:] = [tracking]
+    archivio.importa.click()
+    assert archivio.pratiche.rowCount() == prima + 1
+    assert "1 pratiche nuove" in messaggi.testo.text()
+    assert "1 righe non importate" in messaggi.testo.text()
+
+    scelti[:] = [altro]
+    archivio.importa.click()
+    assert "non sembra un file della versione precedente" in messaggi.testo.text()
     contesto.chiudi()
 
 

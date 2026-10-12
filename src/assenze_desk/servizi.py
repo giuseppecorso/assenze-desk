@@ -40,6 +40,8 @@ from assenze_desk.registro import configura_log
 from assenze_desk.storage.anagrafica import EsitoImport, importa_anagrafica
 from assenze_desk.storage.archivio import Archivio, Pratica, RigaSalvata
 from assenze_desk.storage.export import esporta_giustificativi, esporta_pratiche
+from assenze_desk.storage.import_v620 import DatiV620, importa_in_archivio, leggi_file_v620
+from assenze_desk.storage.import_v620 import EsitoImport as EsitoImportV620
 
 log = logging.getLogger(__name__)
 
@@ -250,6 +252,14 @@ class Contesto:
         esporta_giustificativi(righe, file)
         self.archivio.segna_esportate([r.id for r in righe if r.id is not None])
         return file
+
+    def importa_v620(self, percorso: Path) -> tuple[DatiV620, EsitoImportV620]:
+        """Pratiche o giustificativi dai file Excel della versione precedente."""
+        try:
+            dati = leggi_file_v620(percorso)
+        except (ValueError, OSError, zipfile.BadZipFile, InvalidFileException) as errore:
+            raise ErroreServizi(f"{percorso.name}: {errore}") from errore
+        return dati, importa_in_archivio(self.archivio, dati)
 
     def pratiche_statistiche(self) -> list[PraticaStatistica]:
         soglia = self.impostazioni.soglia_ufficio
