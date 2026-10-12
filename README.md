@@ -184,26 +184,9 @@ In tutto oltre 800 test, copertura del 98%, eseguiti a ogni push dalla CI
 
 ## Sviluppato con l'AI
 
-Il progetto è stato scritto con [Claude Code](https://claude.com/claude-code)
-ed è presentato apertamente come tale.
-
-- **L'autore** ha messo il dominio: conosce il lavoro e ha portato la v6.20
-  come riferimento. Ha definito requisiti e regole di business, ha scelto tra le alternative
-  proposte, ha approvato i mockup e ha verificato a mano le parti che i test
-  non coprono (Outlook vero, certificati veri, OCR, Excel).
-- **Claude** ha scritto codice, test e documentazione, ha letto la v6.20 per
-  capirne le regole (senza copiarne il codice) e ha proposto architettura e
-  soluzioni.
-
-Come è stato verificato il lavoro dell'AI:
-- prima il test che descrive la regola o dimostra il bug, poi il codice;
-- CI a ogni push e controllo privacy prima di ogni commit (mai saltato);
-- un registro delle decisioni con le alternative scartate
-  ([docs/DECISIONI.md](docs/DECISIONI.md)) e un documento per ogni sessione di
-  lavoro ([docs/sessioni/](docs/sessioni/));
-- una checklist di prove a mano ([docs/checklist-manuale.md](docs/checklist-manuale.md))
-  per tutto quello che dipende da Outlook, dallo schermo o da documenti reali;
-- le regole di lavoro date all'AI sono nel repo ([CLAUDE.md](CLAUDE.md)).
+L'idea del progetto è dell'autore, che ne ha definito requisiti e regole e ha
+preso le decisioni. Lo sviluppo è stato assistito dall'AI
+([Claude Code](https://claude.com/claude-code)).
 
 ## Limiti
 
