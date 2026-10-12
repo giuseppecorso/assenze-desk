@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "assenze-desk"
-version = "0.1.0"
+version = "1.0.0"
 description = "Gestione di malattie e giustificativi a partire dalle mail: estrazione dei dati con regole testate, bozze di risposta, archivio locale."
 readme = "README.md"
 requires-python = ">=3.14"

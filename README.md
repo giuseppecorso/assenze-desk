@@ -27,7 +27,7 @@ Per ogni mail bisogna:
 Assenze Desk nasce dalla riscrittura di uno strumento personale (la v6.20).
 Funzionava, ma era un unico file di oltre 14.000
 righe, senza test, con valori aziendali scritti nel codice e alcuni errori
-noti, verificati e poi corretti qui (elenco in [docs/BRIEF.md](docs/BRIEF.md)).
+noti, verificati e poi corretti qui.
 Per esempio:
 - rispondeva alla mail selezionata invece che a quella importata;
 - se non riusciva a leggere una data metteva quella di oggi;

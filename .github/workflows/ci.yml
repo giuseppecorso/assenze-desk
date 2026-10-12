@@ -44,7 +44,7 @@ jobs:
           PRIVACY_DENYLIST: ${{ secrets.PRIVACY_DENYLIST }}
         run: |
           if [ -z "$PRIVACY_DENYLIST" ]; then
-            echo "::error::Manca il secret PRIVACY_DENYLIST (vedi docs/sessioni)."
+            echo "::error::Manca il secret PRIVACY_DENYLIST (vedi scripts/check_privacy.py)."
             exit 1
           fi
           printf '%s\n' "$PRIVACY_DENYLIST" > .privacy-denylist.txt

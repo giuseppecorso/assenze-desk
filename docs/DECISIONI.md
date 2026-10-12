@@ -1,8 +1,8 @@
 # Registro delle decisioni
 
 Ogni decisione: cosa si è deciso, perché, alternative scartate.
-Le decisioni D1-D6 sono quelle di partenza (vedi `docs/BRIEF.md`) e si cambiano
-solo su richiesta dell'utente.
+Le decisioni D1-D6 sono quelle di partenza e si cambiano solo su richiesta
+dell'utente.
 
 | N. | Data | Decisione | Perché | Alternative scartate |
 |---|---|---|---|---|
@@ -64,3 +64,4 @@ solo su richiesta dell'utente.
 | D56 | 2026-10-12 | Pulsante facoltativo "Portale aziendale" nelle Azioni di malattie e giustificativi: nome e indirizzo (https:// oppure percorso di un programma) in Impostazioni > OCR e portali; vuoto = nessun pulsante. Apre soltanto, non compila niente. La versione pubblica resta generica; l'automazione dei programmi interni va in una versione aziendale privata, fuori da questo repo | L'utente apriva il portale interno dalla v6.20. L'indirizzo resta solo nelle impostazioni del PC, quindi il repo non contiene niente di aziendale (D3) | Indirizzo scritto nel codice; compilazione automatica nel repo pubblico |
 | D57 | 2026-10-12 | Installazione con doppio clic: `Installa.cmd` nello zip copia la cartella in `%LOCALAPPDATA%\Programs\AssenzeDesk` (robocopy), sblocca i file scaricati e crea i collegamenti "Assenze Desk" sul Desktop e nel menu Start; si ferma se l'app è aperta; rilanciato fa l'aggiornamento. `Disinstalla.cmd` toglie programma e collegamenti, mai i dati. Icona dell'app (calendario con spunta) disegnata in SVG nel codice e scritta come .ico multi-dimensione al momento della build | L'utente vuole installare sul PC aziendale senza passaggi tecnici; per utente e senza amministratore perché sui PC aziendali spesso non si hanno i diritti; file .cmd leggibili e senza strumenti in più | Installer MSI o Inno Setup (strumenti da installare, spesso servono i diritti di amministratore); zip da estrarre e avviare a mano |
 | D58 | 2026-10-12 | Icona più curata (calendario bianco con spunta verde su blu sfumato), usata anche come logo nella barra laterale al posto di "AD"; AppUserModelID proprio, così la barra delle applicazioni di Windows mostra l'icona dell'app anche avviandola da Python | Richiesta dell'utente: un'icona riconoscibile nella barra delle applicazioni | Icona di Python o di PyInstaller predefinita |
+| D59 | 2026-10-12 | Pubblicazione (fase 5): nel repo pubblico restano codice, test, README, registro delle decisioni, mockup e note di rilascio. Istruzioni di lavoro, brief, resoconti delle sessioni e checklist delle prove a mano restano solo sul PC dell'autore, tolti anche dalla cronologia prima di rendere pubblico il repo; supera D16. Versione 1.0.0 | Scelta dell'autore: del metodo di lavoro si mostra solo l'essenziale | Tenerli nel repo (D16); toglierli solo dall'ultimo commit (resterebbero nella cronologia) |
