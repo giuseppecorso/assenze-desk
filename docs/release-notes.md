@@ -1,6 +1,14 @@
 Assenze Desk: gestione di malattie e giustificativi a partire dalle mail,
 per Windows.
 
+## Novità della 1.2.0
+
+- Copia di sicurezza giornaliera dell'archivio (ultime 14), anche in una
+  cartella esterna al PC; se l'archivio si danneggia l'app riprende da sola
+  l'ultima copia e lo dice.
+- Documentazione: analisi funzionale con i processi in BPMN e scheda su
+  sicurezza e protezione dei dati.
+
 ## Novità della 1.1.0
 
 - Il dipendente che scrive da un indirizzo diverso da quello in anagrafica

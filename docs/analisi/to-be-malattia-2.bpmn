@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definizioni_to-be-malattia-2" targetNamespace="https://example.org/assenze-desk">
+  <bpmn:collaboration id="Collab_to-be-malattia-2">
+    <bpmn:participant id="Pool_to-be-malattia-2" name="Ufficio del personale" processRef="Processo_to-be-malattia-2" />
+  </bpmn:collaboration>
+  <bpmn:process id="Processo_to-be-malattia-2" name="TO-BE · Malattia con Assenze Desk, parte 2: comunicazioni e registrazione" isExecutable="false">
+    <bpmn:laneSet id="Corsie_to-be-malattia-2">
+      <bpmn:lane id="Corsia_operatore" name="Operatore">
+        <bpmn:flowNodeRef>N_chi</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>N_invia</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>N_sistemi</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>N_fine</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Corsia_app" name="Assenze Desk">
+        <bpmn:flowNodeRef>N_da_1</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>N_episodio</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>N_bozze</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>N_salva</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:intermediateCatchEvent id="N_da_1" name="Da parte 1 (A)">
+      <bpmn:outgoing>F_1</bpmn:outgoing>
+      <bpmn:linkEventDefinition id="L_da_1" name="A" />
+    </bpmn:intermediateCatchEvent>
+    <bpmn:serviceTask id="N_episodio" name="Calcola episodio e stato della pratica">
+      <bpmn:incoming>F_1</bpmn:incoming>
+      <bpmn:outgoing>F_2</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:userTask id="N_chi" name="Sceglie a chi rispondere (proposta automatica)">
+      <bpmn:incoming>F_2</bpmn:incoming>
+      <bpmn:outgoing>F_3</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:serviceTask id="N_bozze" name="Bozze al lavoratore e, oltre soglia, all'ufficio">
+      <bpmn:incoming>F_3</bpmn:incoming>
+      <bpmn:outgoing>F_4</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:userTask id="N_invia" name="Controlla e invia le bozze">
+      <bpmn:incoming>F_4</bpmn:incoming>
+      <bpmn:outgoing>F_5</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:serviceTask id="N_salva" name="Salva pratica e storico, sposta la mail">
+      <bpmn:incoming>F_5</bpmn:incoming>
+      <bpmn:outgoing>F_6</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:userTask id="N_sistemi" name="Registra nei sistemi interni">
+      <bpmn:documentation>Fuori dall'ambito del prodotto.</bpmn:documentation>
+      <bpmn:incoming>F_6</bpmn:incoming>
+      <bpmn:outgoing>F_7</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:endEvent id="N_fine" name="Pratica gestita">
+      <bpmn:incoming>F_7</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="F_1" sourceRef="N_da_1" targetRef="N_episodio" />
+    <bpmn:sequenceFlow id="F_2" sourceRef="N_episodio" targetRef="N_chi" />
+    <bpmn:sequenceFlow id="F_3" sourceRef="N_chi" targetRef="N_bozze" />
+    <bpmn:sequenceFlow id="F_4" sourceRef="N_bozze" targetRef="N_invia" />
+    <bpmn:sequenceFlow id="F_5" sourceRef="N_invia" targetRef="N_salva" />
+    <bpmn:sequenceFlow id="F_6" sourceRef="N_salva" targetRef="N_sistemi" />
+    <bpmn:sequenceFlow id="F_7" sourceRef="N_sistemi" targetRef="N_fine" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="DI_to-be-malattia-2">
+    <bpmndi:BPMNPlane id="Piano_to-be-malattia-2" bpmnElement="Collab_to-be-malattia-2">
+      <bpmndi:BPMNShape id="DI_Pool_to-be-malattia-2" bpmnElement="Pool_to-be-malattia-2" isHorizontal="true">
+        <dc:Bounds x="10" y="46" width="1145" height="260" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_Corsia_operatore" bpmnElement="Corsia_operatore" isHorizontal="true">
+        <dc:Bounds x="40" y="46" width="1115" height="130" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_Corsia_app" bpmnElement="Corsia_app" isHorizontal="true">
+        <dc:Bounds x="40" y="176" width="1115" height="130" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_N_da_1" bpmnElement="N_da_1">
+        <dc:Bounds x="98" y="224" width="34" height="34" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_N_episodio" bpmnElement="N_episodio">
+        <dc:Bounds x="196" y="209" width="118" height="64" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_N_chi" bpmnElement="N_chi">
+        <dc:Bounds x="336" y="79" width="118" height="64" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_N_bozze" bpmnElement="N_bozze">
+        <dc:Bounds x="476" y="209" width="118" height="64" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_N_invia" bpmnElement="N_invia">
+        <dc:Bounds x="616" y="79" width="118" height="64" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_N_salva" bpmnElement="N_salva">
+        <dc:Bounds x="756" y="209" width="118" height="64" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_N_sistemi" bpmnElement="N_sistemi">
+        <dc:Bounds x="896" y="79" width="118" height="64" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_N_fine" bpmnElement="N_fine">
+        <dc:Bounds x="1078" y="94" width="34" height="34" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="DI_F_1" bpmnElement="F_1">
+        <di:waypoint x="132" y="241" />
+        <di:waypoint x="196" y="241" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_F_2" bpmnElement="F_2">
+        <di:waypoint x="314" y="241" />
+        <di:waypoint x="325" y="241" />
+        <di:waypoint x="325" y="111" />
+        <di:waypoint x="336" y="111" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_F_3" bpmnElement="F_3">
+        <di:waypoint x="454" y="111" />
+        <di:waypoint x="465" y="111" />
+        <di:waypoint x="465" y="241" />
+        <di:waypoint x="476" y="241" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_F_4" bpmnElement="F_4">
+        <di:waypoint x="594" y="241" />
+        <di:waypoint x="605" y="241" />
+        <di:waypoint x="605" y="111" />
+        <di:waypoint x="616" y="111" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_F_5" bpmnElement="F_5">
+        <di:waypoint x="734" y="111" />
+        <di:waypoint x="745" y="111" />
+        <di:waypoint x="745" y="241" />
+        <di:waypoint x="756" y="241" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_F_6" bpmnElement="F_6">
+        <di:waypoint x="874" y="241" />
+        <di:waypoint x="885" y="241" />
+        <di:waypoint x="885" y="111" />
+        <di:waypoint x="896" y="111" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_F_7" bpmnElement="F_7">
+        <di:waypoint x="1014" y="111" />
+        <di:waypoint x="1078" y="111" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

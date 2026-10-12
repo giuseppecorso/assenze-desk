@@ -64,7 +64,7 @@ Per esempio:
   negli appunti. Poi trova il PDF scaricato e lo archivia con il nome del
   protocollo.
 - **Archivio** in SQLite con filtri, storico delle modifiche, stato modificabile
-  a mano ed export in Excel.
+  a mano, export in Excel e copia di sicurezza giornaliera.
 - **Statistiche**: giorni per mese, stati, classifiche e tempo medio di
   gestione senza i valori anomali.
 - **Impostazioni** in un file JSON: percorsi, destinatari, template delle mail,
@@ -115,6 +115,14 @@ Per lo sviluppo: `pip install -e ".[dev]"`, poi `pytest` e `ruff check`.
 La versione senza Python si crea con `pip install -e ".[exe]"` e
 `python scripts/crea_eseguibile.py`; con un tag `v*` la crea la CI, insieme
 alla bozza della release.
+
+## Documentazione
+
+- [Analisi funzionale](docs/analisi-funzionale.md): problema, processo AS-IS e
+  TO-BE in BPMN, requisiti collegati ai test, user story, rischi. Risparmio di
+  tempo misurato: circa il 70% rispetto all'inserimento manuale.
+- [Sicurezza e protezione dei dati](docs/sicurezza.md).
+- [Registro delle decisioni](docs/DECISIONI.md), con le alternative scartate.
 
 ## Architettura
 
@@ -171,10 +179,13 @@ Ogni scelta, con le alternative scartate, è in
 In tutto oltre 800 test, copertura del 98%, eseguiti a ogni push dalla CI
 (Ruff e pytest, anche quelli dell'interfaccia, senza schermo).
 
-## Privacy
+## Sicurezza e privacy
 
 - I dati restano sul PC: niente servizi esterni, niente invii automatici.
 - Il codice fiscale è mascherato nei log e nello storico.
+- Copia di sicurezza giornaliera dell'archivio (ultime 14) e ripristino
+  automatico se il file si danneggia.
+- Dettagli, dove stanno i dati e limiti: [docs/sicurezza.md](docs/sicurezza.md).
 - Un controllo automatico blocca ogni commit che contiene dati reali:
   - termini di un elenco locale escluso da git;
   - email non di esempio;

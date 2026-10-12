@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definizioni_as-is-malattia-2" targetNamespace="https://example.org/assenze-desk">
+  <bpmn:collaboration id="Collab_as-is-malattia-2">
+    <bpmn:participant id="Pool_as-is-malattia-2" name="Ufficio del personale" processRef="Processo_as-is-malattia-2" />
+  </bpmn:collaboration>
+  <bpmn:process id="Processo_as-is-malattia-2" name="AS-IS · Malattia, parte 2: comunicazioni e registrazione" isExecutable="false">
+    <bpmn:laneSet id="Corsie_as-is-malattia-2">
+      <bpmn:lane id="Corsia_operatore" name="Operatore">
+        <bpmn:flowNodeRef>N_da_1</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>N_episodio</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>N_soglia</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>N_ufficio</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>N_risposta</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>N_tracking</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>N_sistemi</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>N_fine</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:intermediateCatchEvent id="N_da_1" name="Da parte 1 (A)">
+      <bpmn:outgoing>F_1</bpmn:outgoing>
+      <bpmn:linkEventDefinition id="L_da_1" name="A" />
+    </bpmn:intermediateCatchEvent>
+    <bpmn:userTask id="N_episodio" name="Ricostruisce l'episodio a mano">
+      <bpmn:documentation>Calcolo a mano dei giorni dell'episodio.</bpmn:documentation>
+      <bpmn:incoming>F_1</bpmn:incoming>
+      <bpmn:outgoing>F_2</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:exclusiveGateway id="N_soglia" name="Oltre 3 giorni?">
+      <bpmn:incoming>F_2</bpmn:incoming>
+      <bpmn:outgoing>F_3</bpmn:outgoing>
+      <bpmn:outgoing>F_4</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:userTask id="N_ufficio" name="Scrive la mail all'ufficio e allega i PDF">
+      <bpmn:incoming>F_4</bpmn:incoming>
+      <bpmn:outgoing>F_5</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:userTask id="N_risposta" name="Scrive la risposta al lavoratore">
+      <bpmn:documentation>Risposta creata sulla mail selezionata, non su quella gestita.</bpmn:documentation>
+      <bpmn:incoming>F_3</bpmn:incoming>
+      <bpmn:incoming>F_5</bpmn:incoming>
+      <bpmn:outgoing>F_6</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:userTask id="N_tracking" name="Aggiorna l'Excel di tracking">
+      <bpmn:documentation>File riscritto per intero a ogni modifica, senza storico.</bpmn:documentation>
+      <bpmn:incoming>F_6</bpmn:incoming>
+      <bpmn:outgoing>F_7</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:userTask id="N_sistemi" name="Registra nei sistemi interni e sposta la mail">
+      <bpmn:incoming>F_7</bpmn:incoming>
+      <bpmn:outgoing>F_8</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:endEvent id="N_fine" name="Pratica gestita">
+      <bpmn:incoming>F_8</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="F_1" sourceRef="N_da_1" targetRef="N_episodio" />
+    <bpmn:sequenceFlow id="F_2" sourceRef="N_episodio" targetRef="N_soglia" />
+    <bpmn:sequenceFlow id="F_3" sourceRef="N_soglia" targetRef="N_risposta" name="No" />
+    <bpmn:sequenceFlow id="F_4" sourceRef="N_soglia" targetRef="N_ufficio" name="Sì" />
+    <bpmn:sequenceFlow id="F_5" sourceRef="N_ufficio" targetRef="N_risposta" />
+    <bpmn:sequenceFlow id="F_6" sourceRef="N_risposta" targetRef="N_tracking" />
+    <bpmn:sequenceFlow id="F_7" sourceRef="N_tracking" targetRef="N_sistemi" />
+    <bpmn:sequenceFlow id="F_8" sourceRef="N_sistemi" targetRef="N_fine" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="DI_as-is-malattia-2">
+    <bpmndi:BPMNPlane id="Piano_as-is-malattia-2" bpmnElement="Collab_as-is-malattia-2">
+      <bpmndi:BPMNShape id="DI_Pool_as-is-malattia-2" bpmnElement="Pool_as-is-malattia-2" isHorizontal="true">
+        <dc:Bounds x="10" y="46" width="1145" height="240" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_Corsia_operatore" bpmnElement="Corsia_operatore" isHorizontal="true">
+        <dc:Bounds x="40" y="46" width="1115" height="240" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_N_da_1" bpmnElement="N_da_1">
+        <dc:Bounds x="98" y="94" width="34" height="34" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_N_episodio" bpmnElement="N_episodio">
+        <dc:Bounds x="196" y="79" width="118" height="64" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_N_soglia" bpmnElement="N_soglia" isMarkerVisible="true">
+        <dc:Bounds x="373" y="89" width="44" height="44" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_N_ufficio" bpmnElement="N_ufficio">
+        <dc:Bounds x="476" y="189" width="118" height="64" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_N_risposta" bpmnElement="N_risposta">
+        <dc:Bounds x="616" y="79" width="118" height="64" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_N_tracking" bpmnElement="N_tracking">
+        <dc:Bounds x="756" y="79" width="118" height="64" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_N_sistemi" bpmnElement="N_sistemi">
+        <dc:Bounds x="896" y="79" width="118" height="64" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DI_N_fine" bpmnElement="N_fine">
+        <dc:Bounds x="1078" y="94" width="34" height="34" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="DI_F_1" bpmnElement="F_1">
+        <di:waypoint x="132" y="111" />
+        <di:waypoint x="196" y="111" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_F_2" bpmnElement="F_2">
+        <di:waypoint x="314" y="111" />
+        <di:waypoint x="373" y="111" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_F_3" bpmnElement="F_3">
+        <di:waypoint x="417" y="111" />
+        <di:waypoint x="616" y="111" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_F_4" bpmnElement="F_4">
+        <di:waypoint x="395" y="133" />
+        <di:waypoint x="395" y="221" />
+        <di:waypoint x="476" y="221" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_F_5" bpmnElement="F_5">
+        <di:waypoint x="594" y="221" />
+        <di:waypoint x="605" y="221" />
+        <di:waypoint x="605" y="111" />
+        <di:waypoint x="616" y="111" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_F_6" bpmnElement="F_6">
+        <di:waypoint x="734" y="111" />
+        <di:waypoint x="756" y="111" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_F_7" bpmnElement="F_7">
+        <di:waypoint x="874" y="111" />
+        <di:waypoint x="896" y="111" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DI_F_8" bpmnElement="F_8">
+        <di:waypoint x="1014" y="111" />
+        <di:waypoint x="1078" y="111" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
