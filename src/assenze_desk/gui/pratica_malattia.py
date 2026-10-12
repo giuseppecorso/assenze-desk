@@ -39,6 +39,7 @@ from assenze_desk.gui.componenti import (
     Scheda,
     Segmenti,
     etichetta,
+    mostra_portale,
     pulsante,
     riga,
     separatore,
@@ -172,7 +173,15 @@ class PraticaMalattia(QWidget):
         self.bozza_ufficio = pulsante("Bozza all'ufficio", "mail")
         self.sposta = pulsante("Sposta mail", "sposta")
         self.salva = pulsante("Salva pratica", "salva", "primario")
-        scheda.corpo.addLayout(riga(self.bozza_lavoratore, self.bozza_ufficio, self.sposta))
+        self.portale_aziendale = pulsante("Portale aziendale", "esterno", "piatto")
+        scheda.corpo.addLayout(
+            riga(
+                self.bozza_lavoratore, self.bozza_ufficio, self.sposta, None, self.portale_aziendale
+            )
+        )
+        self.portale_aziendale.clicked.connect(
+            lambda: esegui(self.messaggi, self.contesto.apri_portale_aziendale)
+        )
         self.nessuna_risposta.clicked.connect(lambda: esegui(self.messaggi, self._senza_risposta))
         nota = etichetta("Le mail restano bozze: le invii tu.", "secondario")
         scheda.corpo.addLayout(riga(nota, None, self.salva))
@@ -477,6 +486,7 @@ class PraticaMalattia(QWidget):
         return self.contesto.adesso().date()
 
     def _ridisegna(self) -> None:
+        mostra_portale(self.portale_aziendale, self.contesto.impostazioni.portale_aziendale)
         inizio, fine = controlla_periodo(self.modulo["inizio"], self.modulo["fine"], self._oggi())
         controllati = {"inizio": inizio, "fine": fine}
         for nome, widget in self.campi.items():

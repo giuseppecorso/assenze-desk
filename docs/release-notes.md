@@ -18,6 +18,8 @@ alla chiusura. Senza `--demo` l'app usa i dati in `%LOCALAPPDATA%\AssenzeDesk`.
   installato), certificato PDF INPS e assistente per il portale.
 - Archivio con filtri, storico ed export in Excel; statistiche; impostazioni
   in un file; tema chiaro e scuro.
+- Pulsante facoltativo per aprire il portale o il programma aziendale,
+  con l'indirizzo scelto nelle impostazioni.
 - Le mail restano sempre bozze.
 
 Dettagli, architettura e limiti nel [README](https://github.com/giuseppecorso/assenze-desk#readme).

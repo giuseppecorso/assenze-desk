@@ -171,6 +171,14 @@ class Contesto:
     def archivia_scaricato(self, percorso: Path, protocollo: str) -> Path:
         return self._archivia(percorso, protocollo)
 
+    def apri_portale_aziendale(self) -> None:
+        portale = self.impostazioni.portale_aziendale
+        if not portale.attivo:
+            raise ErroreServizi(
+                "Scrivi l'indirizzo del portale aziendale in Impostazioni > OCR e portali."
+            )
+        self.apri_url(portale.indirizzo)
+
     # --- Bozze e spostamento: mai invii ---
 
     def crea_bozza(

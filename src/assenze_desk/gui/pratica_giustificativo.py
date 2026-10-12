@@ -39,6 +39,7 @@ from assenze_desk.gui.componenti import (
     Interruttore,
     Scheda,
     etichetta,
+    mostra_portale,
     pulsante,
     riga,
 )
@@ -135,7 +136,13 @@ class PraticaGiustificativo(QWidget):
         self.bozza_lavoratore = pulsante("Bozza al lavoratore", "mail")
         self.sposta = pulsante("Sposta mail", "sposta")
         self.salva = pulsante("Salva righe", "salva", "primario")
-        scheda.corpo.addLayout(riga(self.bozza_lavoratore, self.sposta, None, self.salva))
+        self.portale_aziendale = pulsante("Portale aziendale", "esterno", "piatto")
+        scheda.corpo.addLayout(
+            riga(self.bozza_lavoratore, self.sposta, self.portale_aziendale, None, self.salva)
+        )
+        self.portale_aziendale.clicked.connect(
+            lambda: esegui(self.messaggi, self.contesto.apri_portale_aziendale)
+        )
         self.bozza_lavoratore.clicked.connect(lambda: esegui(self.messaggi, self._bozza))
         self.sposta.clicked.connect(lambda: esegui(self.messaggi, self._sposta))
         self.salva.clicked.connect(lambda: esegui(self.messaggi, self._salva))
@@ -224,6 +231,7 @@ class PraticaGiustificativo(QWidget):
         self._ridisegna()
 
     def _ridisegna(self) -> None:
+        mostra_portale(self.portale_aziendale, self.contesto.impostazioni.portale_aziendale)
         self.campi["tipo"].imposta_scelte(self._nomi_tipi())
         controllati = {"giorni": controlla_giorni(self.modulo["giorni"], self._oggi())}
         for nome, widget in self.campi.items():

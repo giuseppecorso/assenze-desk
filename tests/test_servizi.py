@@ -11,7 +11,7 @@ import pytest
 from outlook_finto import Allegato, Mail, OutlookFinto
 
 from assenze_desk.adapters.outlook import Outlook
-from assenze_desk.config import MailUfficio
+from assenze_desk.config import MailUfficio, PortaleAziendale
 from assenze_desk.core.episodio import Certificato
 from assenze_desk.core.giustificativi import TIPI_PREDEFINITI, righe_giustificativo
 from assenze_desk.demo.ambiente import PostaDemo
@@ -262,6 +262,18 @@ def test_assistente_inps(contesto, aperti, tmp_path):
     archiviato = contesto.archivia_scaricato(scaricato, "412345678")
     assert archiviato.name == "412345678.pdf"
     assert not scaricato.exists()
+
+
+def test_portale_aziendale(contesto, aperti):
+    with pytest.raises(ErroreServizi, match="Impostazioni"):
+        contesto.apri_portale_aziendale()  # senza indirizzo non si apre niente
+    assert aperti == []
+    contesto.impostazioni = replace(
+        contesto.impostazioni,
+        portale_aziendale=PortaleAziendale("Intranet", "https://intranet.example/app"),
+    )
+    contesto.apri_portale_aziendale()
+    assert aperti == ["https://intranet.example/app"]
 
 
 # --- Giustificativi ---

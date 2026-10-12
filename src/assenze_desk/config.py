@@ -56,6 +56,29 @@ class Risposte:
     mittente_collega: str = ""
 
 
+@dataclass(frozen=True)
+class PortaleAziendale:
+    """Programma o sito interno da aprire con un clic dalla pratica (vuoto = nessun pulsante).
+    L'indirizzo lo scrive l'utente e resta solo nelle sue impostazioni."""
+
+    nome: str = "Portale aziendale"
+    indirizzo: str = ""
+
+    @property
+    def attivo(self) -> bool:
+        return bool(self.indirizzo)
+
+
+def indirizzo_apribile(testo: str) -> bool:
+    """Vuoto, un sito (http/https) o un percorso di Windows (C:\\... o \\\\server\\...)."""
+    testo = testo.strip()
+    if not testo or testo.lower().startswith(("https://", "http://")):
+        return True
+    return testo.startswith("\\\\") or (
+        len(testo) > 2 and testo[0].isalpha() and testo[1:3] == ":\\"
+    )
+
+
 TEMI = ("sistema", "chiaro", "scuro")
 POSTA = ("outlook", "mailto")
 
@@ -119,6 +142,7 @@ class Impostazioni:
     posta: str = "outlook"  # outlook (Outlook Classic) oppure mailto (programma predefinito)
     cartelle_outlook: CartelleOutlook = CartelleOutlook()
     risposte: Risposte = Risposte()
+    portale_aziendale: PortaleAziendale = PortaleAziendale()
 
 
 def cartella_dati_predefinita() -> Path:
@@ -318,6 +342,22 @@ def _risposte(valore: Any, predefinite: Impostazioni, _cartella: Path):
     return "risposte", Risposte(**attuali)
 
 
+def _portale_aziendale(valore: Any, predefinite: Impostazioni, _cartella: Path):
+    attuali = {
+        "nome": predefinite.portale_aziendale.nome,
+        "indirizzo": predefinite.portale_aziendale.indirizzo,
+    }
+    for nome, dato in valore.items():
+        if nome not in attuali or not isinstance(dato, str):
+            raise ValueError(f"voce non valida: {nome}")
+        attuali[nome] = dato.strip()
+    if not attuali["nome"]:
+        raise ValueError("serve il nome del pulsante")
+    if not indirizzo_apribile(attuali["indirizzo"]):
+        raise ValueError("serve un indirizzo https:// oppure il percorso di un programma")
+    return "portale_aziendale", PortaleAziendale(**attuali)
+
+
 def _template(valore: Any, predefinite: Impostazioni, _cartella: Path):
     nomi = {f.name for f in fields(Template)}
     testi = {
@@ -345,6 +385,7 @@ _CONVERSIONI = {
     "posta": _scelta("posta", POSTA),
     "cartelle_outlook": _cartelle_outlook,
     "risposte": _risposte,
+    "portale_aziendale": _portale_aziendale,
 }
 
 
@@ -392,6 +433,10 @@ def _in_dizionario(imp: Impostazioni) -> dict[str, Any]:
         "risposte": {
             "dalla_lista_cliente": imp.risposte.dalla_lista_cliente,
             "mittente_collega": imp.risposte.mittente_collega,
+        },
+        "portale_aziendale": {
+            "nome": imp.portale_aziendale.nome,
+            "indirizzo": imp.portale_aziendale.indirizzo,
         },
     }
 

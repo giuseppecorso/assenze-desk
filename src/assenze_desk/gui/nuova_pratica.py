@@ -188,7 +188,7 @@ class NuovaPratica(QWidget):
         if tesseract is None:
             self.messaggi.mostra(
                 "Tesseract OCR non trovato: installalo oppure indica dove si trova in "
-                "Impostazioni > OCR e portale INPS.",
+                "Impostazioni > OCR e portali.",
                 "errore",
             )
             return

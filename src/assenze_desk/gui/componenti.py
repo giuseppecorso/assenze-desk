@@ -48,6 +48,13 @@ def pulsante(
     return bottone
 
 
+def mostra_portale(bottone: QPushButton, portale) -> None:
+    """Il pulsante del portale aziendale ha il nome scelto e compare solo con un indirizzo."""
+    bottone.setText(portale.nome)
+    bottone.setToolTip(f"Apre {portale.indirizzo}" if portale.attivo else "")
+    bottone.setHidden(not portale.attivo)
+
+
 def etichetta(testo: str = "", ruolo: str = "", a_capo: bool = False) -> QLabel:
     label = QLabel(testo)
     if ruolo:

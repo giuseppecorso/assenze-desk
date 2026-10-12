@@ -9,10 +9,12 @@ from assenze_desk.adapters.inps import URL_PORTALE_INPS
 from assenze_desk.config import (
     CartelleOutlook,
     Ocr,
+    PortaleAziendale,
     Risposte,
     carica_impostazioni,
     cartella_dati_predefinita,
     impostazioni_predefinite,
+    indirizzo_apribile,
     regole_analisi,
     salva_impostazioni,
 )
@@ -179,6 +181,42 @@ def test_risposte_al_lavoratore_e_ai_colleghi(tmp_path, cartella):
     assert carica_impostazioni(file, cartella) == (imp, [])
 
 
+def test_portale_aziendale_facoltativo(tmp_path, cartella):
+    imp = impostazioni_predefinite(cartella)
+    assert imp.portale_aziendale == PortaleAziendale(nome="Portale aziendale", indirizzo="")
+    assert not imp.portale_aziendale.attivo
+
+    file = scrivi(
+        tmp_path,
+        {"portale_aziendale": {"nome": "Intranet", "indirizzo": "https://intranet.example/app"}},
+    )
+    imp, avvisi = carica_impostazioni(file, cartella)
+    assert avvisi == []
+    assert imp.portale_aziendale == PortaleAziendale("Intranet", "https://intranet.example/app")
+    assert imp.portale_aziendale.attivo
+    salva_impostazioni(imp, file)
+    assert carica_impostazioni(file, cartella) == (imp, [])
+
+
+@pytest.mark.parametrize(
+    "indirizzo",
+    [
+        "",
+        "https://intranet.example",
+        "http://10.0.0.1/app",
+        r"C:\Programmi\App\app.exe",
+        r"\\server\app",
+    ],
+)
+def test_portale_aziendale_indirizzi_ammessi(indirizzo):
+    assert indirizzo_apribile(indirizzo)
+
+
+@pytest.mark.parametrize("indirizzo", ["intranet.example", "ftp://x", "javascript:alert(1)"])
+def test_portale_aziendale_indirizzi_rifiutati(indirizzo):
+    assert not indirizzo_apribile(indirizzo)
+
+
 def test_regole_per_l_analisi(tmp_path, cartella):
     file = scrivi(tmp_path, {"giorni_avanti_permessi": 30, "protocollo": {"lunghezza": 10}})
     imp, _ = carica_impostazioni(file, cartella)
@@ -213,6 +251,9 @@ def test_voce_sconosciuta_avviso(tmp_path, cartella):
         ({"cartelle_outlook": {"malattie": 3}}, "cartelle_outlook"),
         ({"risposte": {"dalla_lista_cliente": "forse"}}, "risposte"),
         ({"risposte": {"inventata": 1}}, "risposte"),
+        ({"portale_aziendale": {"indirizzo": "intranet.example"}}, "portale_aziendale"),
+        ({"portale_aziendale": {"nome": ""}}, "portale_aziendale"),
+        ({"portale_aziendale": {"inventata": "x"}}, "portale_aziendale"),
     ],
 )
 def test_valore_non_valido_errore_con_la_voce(tmp_path, cartella, contenuto, voce):

@@ -252,6 +252,35 @@ def test_impostazioni_si_salvano_e_si_applicano(finestra):
     assert "salvate" in finestra.messaggi.testo.text()
 
 
+def test_portale_aziendale_dalle_impostazioni(finestra):
+    malattia = finestra.nuova_pratica.malattia
+    giustificativo = finestra.nuova_pratica.giustificativo
+    assert malattia.portale_aziendale.isHidden()  # senza indirizzo nessun pulsante
+    assert giustificativo.portale_aziendale.isHidden()
+
+    sezione = finestra.impostazioni
+    pagina = sezione.pagine[6]
+    pagina.nome_portale.setText("Intranet")
+    pagina.indirizzo_portale.setText("intranet.example")  # manca https://
+    sezione.salva.click()
+    assert finestra.messaggi.property("avviso") == "errore"
+    assert "portale aziendale" in finestra.messaggi.testo.text()
+
+    pagina.indirizzo_portale.setText(" https://intranet.example/app ")
+    sezione.salva.click()
+    portale = finestra.contesto.impostazioni.portale_aziendale
+    assert (portale.nome, portale.indirizzo) == ("Intranet", "https://intranet.example/app")
+    for schermata in (malattia, giustificativo):
+        assert not schermata.portale_aziendale.isHidden()
+        assert schermata.portale_aziendale.text() == "Intranet"
+
+    aperti = []
+    finestra.contesto.apri_url = aperti.append
+    malattia.portale_aziendale.click()
+    giustificativo.portale_aziendale.click()
+    assert aperti == ["https://intranet.example/app"] * 2
+
+
 def test_impostazioni_non_valide_mostrano_dove_correggere(finestra):
     sezione = finestra.impostazioni
     sezione.pagine[3].regole["protocollo"][1].setText("A1")  # prefisso non numerico

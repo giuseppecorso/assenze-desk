@@ -34,7 +34,9 @@ from assenze_desk.config import (
     MailUfficio,
     Ocr,
     Percorsi,
+    PortaleAziendale,
     Risposte,
+    indirizzo_apribile,
 )
 from assenze_desk.core.giustificativi import TipoGiustificativo
 from assenze_desk.core.identificativi import RegolaNumero
@@ -506,7 +508,7 @@ class PaginaVocabolario(Pagina):
 
 
 class PaginaOcrInps(Pagina):
-    titolo = "OCR e portale INPS"
+    titolo = "OCR e portali"
     SPUNTE = (
         ("Automatico", None),
         ("La X è prima della voce", True),
@@ -538,6 +540,25 @@ class PaginaOcrInps(Pagina):
         forma.addRow("Spunte nel PDF", self.spunte)
         self.corpo.addWidget(inps)
 
+        aziendale = Scheda("Portale aziendale", "esterno")
+        forma = _modulo(aziendale)
+        self.nome_portale, self.indirizzo_portale = QLineEdit(), QLineEdit()
+        self.indirizzo_portale.setPlaceholderText(
+            "https://... oppure il percorso del programma; vuoto = nessun pulsante"
+        )
+        forma.addRow("Nome del pulsante", self.nome_portale)
+        forma.addRow("Indirizzo", self.indirizzo_portale)
+        forma.addRow(
+            "",
+            etichetta(
+                "Il pulsante compare nelle Azioni della pratica e apre il portale con un clic. "
+                "L'indirizzo resta solo su questo PC.",
+                "secondario",
+                a_capo=True,
+            ),
+        )
+        self.corpo.addWidget(aziendale)
+
     def _verifica(self) -> None:
         trovato = trova_tesseract(self.tesseract.text().strip())
         self.esito.setText(
@@ -551,16 +572,25 @@ class PaginaOcrInps(Pagina):
         self.rumore.setText(testo_elenco(imp.ocr.parole_rumore))
         self.portale.setText(imp.portale_inps)
         self.spunte.setCurrentIndex(max(self.spunte.findData(imp.spunte_prima_della_voce), 0))
+        self.nome_portale.setText(imp.portale_aziendale.nome)
+        self.indirizzo_portale.setText(imp.portale_aziendale.indirizzo)
 
     def applica(self, imp: Impostazioni) -> Impostazioni:
         portale = self.portale.text().strip()
         if not portale.startswith(("https://", "http://")):
             raise ValueError(
-                "OCR e portale INPS: l'indirizzo del portale deve iniziare con https://."
+                "OCR e portali: l'indirizzo del portale INPS deve iniziare con https://."
+            )
+        nome, indirizzo = self.nome_portale.text().strip(), self.indirizzo_portale.text().strip()
+        if not indirizzo_apribile(indirizzo):
+            raise ValueError(
+                "OCR e portali: l'indirizzo del portale aziendale deve iniziare con https:// "
+                "oppure essere il percorso di un programma (C:\\...)."
             )
         return replace(
             imp,
             ocr=Ocr(self.tesseract.text().strip(), elenco(self.rumore.text())),
             portale_inps=portale,
             spunte_prima_della_voce=self.spunte.currentData(),
+            portale_aziendale=PortaleAziendale(nome or PortaleAziendale.nome, indirizzo),
         )
