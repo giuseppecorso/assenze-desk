@@ -1,5 +1,15 @@
-Prima versione di Assenze Desk: gestione di malattie e giustificativi a
-partire dalle mail, per Windows.
+Assenze Desk: gestione di malattie e giustificativi a partire dalle mail,
+per Windows.
+
+## Novità della 1.1.0
+
+- Il dipendente che scrive da un indirizzo diverso da quello in anagrafica
+  viene riconosciuto da JobOrder, codice fiscale o nome, e l'indirizzo si
+  ricorda per le volte successive.
+- "Modifica dati" del dipendente: le correzioni restano nell'app, sopra
+  l'anagrafica Excel, che non viene modificata.
+- Protocollo scritto a mano: si scrive liberamente; a fine scrittura si
+  toglie la punteggiatura e si copia negli appunti.
 
 ## Installazione
 
