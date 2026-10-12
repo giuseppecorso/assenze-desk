@@ -172,11 +172,13 @@ class Archivio(QWidget):
             self.cambia_stato.addItem(str(stato), stato)
         self.mostra_storico = pulsante("Storico modifiche", "log")
         self.mostra_storico.setCheckable(True)
+        self.elimina_pratiche = pulsante("Elimina", "elimina")
         scheda.corpo.addLayout(
             riga(
                 self.apri,
                 self.cambia_stato,
                 self.mostra_storico,
+                self.elimina_pratiche,
                 None,
                 etichetta("Doppio clic su una riga: Apri in Nuova pratica", "secondario"),
             )
@@ -191,6 +193,7 @@ class Archivio(QWidget):
             lambda indice: esegui(self.messaggi, lambda: self._cambia_stato(indice))
         )
         self.mostra_storico.toggled.connect(self._mostra_storico)
+        self.elimina_pratiche.clicked.connect(lambda: esegui(self.messaggi, self._elimina_pratiche))
         return scheda
 
     def _pagina_giustificativi(self) -> QWidget:
@@ -381,6 +384,23 @@ class Archivio(QWidget):
             self.contesto.archivio.modifica_riga(riga_.id, minuti=minuti)
         self.aggiorna()
         self.messaggi.mostra(f"Ore corrette in {len(scelte)} righe.", "ok")
+
+    def _elimina_pratiche(self) -> None:
+        scelte = self._selezionate(self.pratiche)
+        if not scelte:
+            self.messaggi.mostra("Seleziona prima una o più pratiche.", "attenzione")
+            return
+        domanda = (
+            f"Eliminare {len(scelte)} pratiche dall'archivio? L'operazione non si annulla. "
+            "I PDF dei certificati restano nella loro cartella."
+        )
+        if not self._conferma(domanda):
+            return
+        self.contesto.archivio.elimina_pratiche([p.protocollo for p in scelte])
+        for pratica in scelte:
+            self.contesto.archivio.registra("Pratica eliminata", pratica.protocollo)
+        self.aggiorna()
+        self.messaggi.mostra(f"Eliminate {len(scelte)} pratiche.", "ok")
 
     def _elimina(self) -> None:
         scelte = self._selezionate(self.righe)

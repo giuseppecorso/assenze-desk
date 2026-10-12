@@ -5,7 +5,7 @@ from datetime import date, datetime
 
 import pytest
 from openpyxl import Workbook
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QItemSelectionModel, Qt
 
 from assenze_desk.core.stato import Stato
 from assenze_desk.gui.archivio import Archivio
@@ -35,9 +35,14 @@ def finestra(qapp, tmp_path, distruggi):
 
 
 def seleziona(tabella, *righe):
+    """Come un clic con Ctrl: le righe si aggiungono alla selezione."""
     tabella.clearSelection()
+    modello = tabella.selectionModel()
     for riga in righe:
-        tabella.selectRow(riga)
+        modello.select(
+            tabella.model().index(riga, 0),
+            QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows,
+        )
 
 
 # --- Archivio ---
@@ -93,6 +98,31 @@ def test_cambiare_lo_stato_a_mano_e_storico(finestra):
     seleziona(archivio.pratiche, 0)
     archivio.cambia_stato.activated.emit(archivio.cambia_stato.findText("Stato automatico"))
     assert finestra.contesto.archivio.pratica(protocollo).stato_manuale is None
+
+
+def test_eliminare_pratiche_con_conferma(qapp, tmp_path, distruggi):
+    contesto, _ = apri_contesto(
+        tmp_path / "dati", demo=True, oggi=OGGI, adesso=Orologio(), apri_url=lambda _url: None
+    )
+    risposte = {"conferma": False}
+    messaggi = BarraMessaggi()
+    distruggi(messaggi)
+    archivio = Archivio(contesto, messaggi, conferma=lambda _domanda: risposte["conferma"])
+    distruggi(archivio)
+    totale = archivio.pratiche.rowCount()
+
+    archivio.elimina_pratiche.click()  # niente selezionato
+    assert "Seleziona" in messaggi.testo.text()
+    seleziona(archivio.pratiche, 0, 1)
+    archivio.elimina_pratiche.click()  # l'utente risponde no
+    assert archivio.pratiche.rowCount() == totale
+    risposte["conferma"] = True
+    seleziona(archivio.pratiche, 0, 1)
+    archivio.elimina_pratiche.click()
+    assert archivio.pratiche.rowCount() == totale - 2
+    assert len(contesto.archivio.pratiche()) == totale - 2
+    assert contesto.archivio.storico()[0].azione == "Pratica eliminata"
+    contesto.chiudi()
 
 
 def test_esporta_le_pratiche_filtrate(finestra):

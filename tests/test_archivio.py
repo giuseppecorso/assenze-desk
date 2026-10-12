@@ -125,6 +125,16 @@ def test_elenco_pratiche_con_filtri(archivio):
     assert [p.protocollo for p in archivio.pratiche(stato=Stato.DA_INVIARE)] == ["411111111"]
 
 
+def test_elimina_pratiche(archivio):
+    archivio.salva_pratica(pratica("411111111"))
+    archivio.salva_pratica(pratica("411111112"))
+    archivio.salva_pratica(pratica("411111113"))
+    archivio.elimina_pratiche(["411111111", "411111113", "499999999"])  # l'ultimo non esiste
+    assert [p.protocollo for p in archivio.pratiche()] == ["411111112"]
+    # una pratica eliminata non conta più per l'episodio
+    assert [c.protocollo for c in archivio.certificati(CF_LUCA)] == ["411111112"]
+
+
 def test_stato_con_la_soglia_delle_impostazioni(orologio):
     lunga = pratica(giorni_episodio=4, mail_lavoratore=True)
     assert lunga.stato is Stato.PARZIALE  # soglia predefinita: 3 giorni

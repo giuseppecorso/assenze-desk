@@ -198,6 +198,12 @@ class Archivio:
         if cursore.rowcount == 0:
             raise KeyError(f"pratica {protocollo} non trovata")
 
+    def elimina_pratiche(self, protocolli: Sequence[str]) -> None:
+        with self._db:
+            self._db.executemany(
+                "DELETE FROM pratiche WHERE protocollo = ?", [(p,) for p in protocolli]
+            )
+
     def pratica(self, protocollo: str) -> Pratica | None:
         riga = self._db.execute(
             "SELECT * FROM pratiche WHERE protocollo = ?", (protocollo,)
