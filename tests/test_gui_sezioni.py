@@ -257,6 +257,7 @@ def test_portale_aziendale_dalle_impostazioni(finestra):
     giustificativo = finestra.nuova_pratica.giustificativo
     assert malattia.portale_aziendale.isHidden()  # senza indirizzo nessun pulsante
     assert giustificativo.portale_aziendale.isHidden()
+    larghezze = [s.minimumSizeHint().width() for s in (malattia, giustificativo)]
 
     sezione = finestra.impostazioni
     pagina = sezione.pagine[6]
@@ -273,6 +274,8 @@ def test_portale_aziendale_dalle_impostazioni(finestra):
     for schermata in (malattia, giustificativo):
         assert not schermata.portale_aziendale.isHidden()
         assert schermata.portale_aziendale.text() == "Intranet"
+    # il pulsante non allarga la colonna (altrimenti i campi a destra si tagliano)
+    assert [s.minimumSizeHint().width() for s in (malattia, giustificativo)] == larghezze
 
     aperti = []
     finestra.contesto.apri_url = aperti.append

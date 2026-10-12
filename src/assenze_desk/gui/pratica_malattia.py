@@ -174,17 +174,13 @@ class PraticaMalattia(QWidget):
         self.sposta = pulsante("Sposta mail", "sposta")
         self.salva = pulsante("Salva pratica", "salva", "primario")
         self.portale_aziendale = pulsante("Portale aziendale", "esterno", "piatto")
-        scheda.corpo.addLayout(
-            riga(
-                self.bozza_lavoratore, self.bozza_ufficio, self.sposta, None, self.portale_aziendale
-            )
-        )
+        scheda.corpo.addLayout(riga(self.bozza_lavoratore, self.bozza_ufficio, self.sposta))
         self.portale_aziendale.clicked.connect(
             lambda: esegui(self.messaggi, self.contesto.apri_portale_aziendale)
         )
         self.nessuna_risposta.clicked.connect(lambda: esegui(self.messaggi, self._senza_risposta))
-        nota = etichetta("Le mail restano bozze: le invii tu.", "secondario")
-        scheda.corpo.addLayout(riga(nota, None, self.salva))
+        scheda.corpo.addWidget(etichetta("Le mail restano bozze: le invii tu.", "secondario"))
+        scheda.corpo.addLayout(riga(self.portale_aziendale, None, self.salva))
         self.bozza_lavoratore.clicked.connect(lambda: esegui(self.messaggi, self._bozza_lavoratore))
         self.bozza_ufficio.clicked.connect(lambda: esegui(self.messaggi, self._bozza_ufficio))
         self.sposta.clicked.connect(lambda: esegui(self.messaggi, self._sposta))
