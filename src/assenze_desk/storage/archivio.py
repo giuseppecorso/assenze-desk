@@ -10,6 +10,7 @@ interessata. Lo stato della pratica non si salva: si calcola con il core
 
 import sqlite3
 from collections.abc import Callable, Iterable, Sequence
+from contextlib import closing
 from dataclasses import dataclass, fields
 from datetime import date, datetime
 from pathlib import Path
@@ -176,6 +177,14 @@ class Archivio:
 
     def chiudi(self) -> None:
         self._db.close()
+
+    def copia_in(self, destinazione: Path) -> None:
+        """Copia coerente dell'archivio aperto (API di backup di SQLite)."""
+        with closing(sqlite3.connect(destinazione)) as copia:
+            self._db.backup(copia)
+
+    def integro(self) -> bool:
+        return self._db.execute("PRAGMA quick_check").fetchone()[0] == "ok"
 
     @property
     def modifiche_totali(self) -> int:

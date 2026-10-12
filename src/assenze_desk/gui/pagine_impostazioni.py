@@ -99,6 +99,7 @@ class PaginaGenerali(Pagina):
         ("export", "Export Excel", True),
         ("download", "Download del browser", True),
         ("log", "Log", True),
+        ("backup", "Copie di sicurezza", True),
     )
 
     def __init__(self) -> None:

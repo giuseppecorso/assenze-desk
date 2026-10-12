@@ -5,7 +5,7 @@ Si usa l'ambiente demo (dati finti) e, dove serve, l'Outlook finto dei test.
 
 import os
 from dataclasses import replace
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 import pytest
 from outlook_finto import Allegato, Mail, OutlookFinto
@@ -393,3 +393,61 @@ def test_correzione_di_un_dipendente_non_in_anagrafica(contesto):
     estraneo = Dipendente("ZZZZZZ80A01Z999Z", "Nuovo", "Dipendente", joborder="X1")
     with pytest.raises(ErroreServizi, match="anagrafica"):
         contesto.correggi_dipendente(estraneo, [])
+
+
+# --- Copie di sicurezza e integrità ---
+
+
+def test_copia_di_sicurezza_all_apertura(tmp_path):
+    cartella = tmp_path / "dati"
+    contesto, _avvisi = apri_contesto(cartella, demo=True, oggi=OGGI, adesso=Orologio())
+    contesto.chiudi()
+    copie = list((cartella / "backup").glob("archivio-*.db"))
+    assert [c.name for c in copie] == [f"archivio-{OGGI:%Y-%m-%d}.db"]
+
+
+def test_archivio_danneggiato_si_ripristina_dall_ultima_copia(tmp_path):
+    cartella, orologio = tmp_path / "dati", Orologio()
+    contesto, _ = apri_contesto(cartella, adesso=orologio)
+    contesto.archivio.salva_pratica(Pratica(protocollo="412345678", cf=CF))
+    archivio = contesto.impostazioni.percorsi.archivio
+    contesto.chiudi()
+    orologio.ora += timedelta(days=1)  # il giorno dopo la copia contiene la pratica
+    contesto, _ = apri_contesto(cartella, adesso=orologio)
+    contesto.chiudi()
+
+    dati = bytearray(archivio.read_bytes())
+    dati[100:] = bytes([0xFF]) * (len(dati) - 100)  # pagine rovinate, intestazione intatta
+    archivio.write_bytes(bytes(dati))
+    contesto, avvisi = apri_contesto(cartella, adesso=orologio)
+    assert contesto.archivio.pratica("412345678") is not None  # recuperata dalla copia
+    contesto.chiudi()
+    avviso = next(a for a in avvisi if "danneggiato" in a)
+    assert "08/10/2026" in avviso  # la data della copia usata
+    danneggiati = list(archivio.parent.glob("archivio-danneggiato-*.db"))
+    assert len(danneggiati) == 1  # il file rovinato non si cancella mai
+
+
+def test_archivio_danneggiato_senza_copie(tmp_path):
+    cartella = tmp_path / "dati"
+    cartella.mkdir()
+    (cartella / "archivio.db").write_bytes(b"SQLite format 3" + bytes([0]) + bytes([0xFF]) * 8192)
+    contesto, avvisi = apri_contesto(cartella, adesso=Orologio())
+    assert contesto.archivio.pratiche() == []
+    contesto.chiudi()
+    assert any("danneggiato" in a and "nessuna copia" in a for a in avvisi)
+
+
+def test_copia_di_sicurezza_non_riuscita_avvisa(tmp_path):
+    import json
+
+    cartella = tmp_path / "dati"
+    cartella.mkdir()
+    occupato = tmp_path / "un-file"
+    occupato.write_text("non è una cartella", encoding="utf-8")
+    (cartella / "impostazioni.json").write_text(
+        json.dumps({"percorsi": {"backup": str(occupato)}}), encoding="utf-8"
+    )
+    contesto, avvisi = apri_contesto(cartella, adesso=Orologio())
+    contesto.chiudi()
+    assert any("Copia di sicurezza" in a and "Impostazioni" in a for a in avvisi)

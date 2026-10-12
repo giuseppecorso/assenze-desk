@@ -29,6 +29,7 @@ class Percorsi:
     export: Path
     log: Path
     download: Path  # dove il browser salva i certificati scaricati dal portale INPS
+    backup: Path  # copie di sicurezza dell'archivio, una al giorno
 
 
 @dataclass(frozen=True)
@@ -160,6 +161,7 @@ def impostazioni_predefinite(cartella_dati: Path) -> Impostazioni:
             export=cartella_dati / "export",
             log=cartella_dati / "log",
             download=Path.home() / "Downloads",
+            backup=cartella_dati / "backup",
         ),
         ufficio=MailUfficio(),
         protocollo=PROTOCOLLO,

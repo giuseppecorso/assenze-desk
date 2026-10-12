@@ -8,6 +8,7 @@ provano senza interfaccia. Gli errori da mostrare all'utente sono `ErroreServizi
 
 import logging
 import shutil
+import sqlite3
 import webbrowser
 import zipfile
 from collections.abc import Callable, Mapping, Sequence
@@ -40,6 +41,7 @@ from assenze_desk.demo.ambiente import PostaDemo, crea_ambiente_demo
 from assenze_desk.registro import configura_log
 from assenze_desk.storage.anagrafica import EsitoImport, importa_anagrafica
 from assenze_desk.storage.archivio import Archivio, Pratica, RigaSalvata
+from assenze_desk.storage.backup import copia_di_sicurezza, integro, ripristina
 from assenze_desk.storage.export import esporta_giustificativi, esporta_pratiche
 from assenze_desk.storage.import_v620 import DatiV620, importa_in_archivio, leggi_file_v620
 from assenze_desk.storage.import_v620 import EsitoImport as EsitoImportV620
@@ -413,10 +415,30 @@ def apri_contesto(
         salva_impostazioni(impostazioni, file)  # così l'utente trova il file da modificare
     configura_log(impostazioni.percorsi.log)
     anagrafica, avvisi_anagrafica = _carica_anagrafica(impostazioni.percorsi.anagrafica)
-    archivio = Archivio(impostazioni.percorsi.archivio, soglia_ufficio=impostazioni.soglia_ufficio)
+    percorsi = impostazioni.percorsi
+    avvisi_archivio = []
+    if not integro(percorsi.archivio):
+        avvisi_archivio.append(ripristina(percorsi.archivio, percorsi.backup, adesso()))
+        log.warning("Archivio danneggiato: messo da parte e ripristinato")
+    archivio = Archivio(percorsi.archivio, soglia_ufficio=impostazioni.soglia_ufficio)
+    avvisi_archivio += _copia_del_giorno(archivio, percorsi.backup, adesso().date())
     log.info("App aperta%s", " in modalità demo" if demo else "")
     contesto = Contesto(impostazioni, file, archivio, anagrafica, posta, demo, adesso, apri_url)
-    return contesto, avvisi + avvisi_anagrafica
+    return contesto, avvisi + avvisi_anagrafica + avvisi_archivio
+
+
+def _copia_del_giorno(archivio: Archivio, cartella: Path, oggi: date) -> list[str]:
+    try:
+        copia = copia_di_sicurezza(archivio, cartella, oggi)
+    except (OSError, sqlite3.Error) as errore:
+        log.warning("Copia di sicurezza non riuscita: %s", errore)
+        return [
+            f"Copia di sicurezza dell'archivio non riuscita ({errore}): controlla la cartella "
+            "in Impostazioni > Generali."
+        ]
+    if copia is not None:
+        log.info("Copia di sicurezza dell'archivio fatta")
+    return []
 
 
 def _carica_anagrafica(percorso: Path) -> tuple[EsitoImport, list[str]]:

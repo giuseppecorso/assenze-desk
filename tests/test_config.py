@@ -39,6 +39,7 @@ def test_valori_predefiniti(cartella):
     imp = impostazioni_predefinite(cartella)
     assert imp.percorsi.archivio == cartella / "archivio.db"
     assert imp.percorsi.anagrafica == cartella / "anagrafica.xlsx"
+    assert imp.percorsi.backup == cartella / "backup"
     assert imp.protocollo == PROTOCOLLO
     assert imp.joborder == JOBORDER
     assert imp.tipi == TIPI_PREDEFINITI
