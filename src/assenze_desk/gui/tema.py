@@ -94,10 +94,6 @@ QMainWindow, QWidget#principale, QStackedWidget, QScrollArea, QScrollArea > QWid
 }
 QFrame#laterale { background: $superficie; border-right: 1px solid $bordo; }
 QLabel#marchio { font-size: 12pt; font-weight: 600; }
-QLabel#logo {
-    background: $accento; color: $accento_testo; border-radius: 7px;
-    font-size: 8pt; font-weight: 700;
-}
 QPushButton[ruolo="voce"] {
     text-align: left; padding: 8px 10px; border: none; border-radius: ${r1}px;
     color: $testo_2; background: transparent;

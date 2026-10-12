@@ -59,6 +59,7 @@ def test_icone(app):
 
 def test_icona_dell_app_e_file_ico(app, tmp_path):
     assert not icone.icona_app().isNull()
+    assert icone.pixmap_app(26).deviceIndependentSize().width() == 26
     file = icone.scrivi_ico(tmp_path / "app.ico")
     dati = file.read_bytes()
     assert dati[:4] == b"\x00\x00\x01\x00"  # intestazione ICO

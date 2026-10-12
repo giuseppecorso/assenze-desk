@@ -31,11 +31,21 @@ def argomenti(argv: Sequence[str] | None = None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
+def _icona_nella_barra() -> None:
+    """Windows raggruppa le finestre per "AppUserModelID": senza un ID proprio,
+    avviata da Python, la barra delle applicazioni mostrerebbe l'icona di Python."""
+    if sys.platform == "win32":
+        import ctypes
+
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("AssenzeDesk.App")
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     scelte = argomenti(argv)
     app = QApplication.instance() or QApplication(sys.argv[:1])
     app.setApplicationName("Assenze Desk")
     app.setWindowIcon(icone.icona_app())
+    _icona_nella_barra()
     cartella_demo = Path(tempfile.mkdtemp(prefix="assenze-desk-demo-")) if scelte.demo else None
     cartella = cartella_demo or scelte.cartella_dati or cartella_dati_predefinita()
     try:

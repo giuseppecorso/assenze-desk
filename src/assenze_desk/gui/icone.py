@@ -83,11 +83,18 @@ def pixmap(nome: str, colore: str, lato: int = LATO, scala: float = 2.0) -> QPix
 # Icona dell'app (finestra, eseguibile, collegamento): calendario con spunta su blu
 ICONA_APP_SVG = (
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">'
-    '<rect x="2" y="2" width="60" height="60" rx="14" fill="#2563eb"/>'
-    '<g fill="none" stroke="#ffffff" stroke-width="4.5" stroke-linecap="round" '
-    'stroke-linejoin="round">'
-    '<rect x="14" y="16" width="36" height="32" rx="5"/><path d="M14 26h36M23 11v9M41 11v9"/>'
-    '<path d="M24 37l5 5 11-10"/></g></svg>'
+    '<defs><linearGradient id="sfondo" x1="0" y1="0" x2="1" y2="1">'
+    '<stop offset="0" stop-color="#4f8cff"/><stop offset="1" stop-color="#1d4ed8"/>'
+    "</linearGradient></defs>"
+    '<rect x="2" y="2" width="60" height="60" rx="15" fill="url(#sfondo)"/>'
+    '<rect x="12" y="15" width="40" height="36" rx="7" fill="#ffffff"/>'
+    '<path d="M12 22a7 7 0 0 1 7-7h26a7 7 0 0 1 7 7v4H12z" fill="#dbe7ff"/>'
+    '<rect x="20" y="9" width="6" height="12" rx="3" fill="#ffffff" stroke="#1d4ed8" '
+    'stroke-width="2"/>'
+    '<rect x="38" y="9" width="6" height="12" rx="3" fill="#ffffff" stroke="#1d4ed8" '
+    'stroke-width="2"/>'
+    '<path d="M22.5 37.5l6.5 6.5 13-13" fill="none" stroke="#16a34a" stroke-width="5" '
+    'stroke-linecap="round" stroke-linejoin="round"/></svg>'
 )
 LATI_ICO = (16, 24, 32, 48, 64, 128, 256)
 
@@ -99,6 +106,13 @@ def _immagine_app(lato: int) -> QPixmap:
     pittore.setRenderHint(QPainter.RenderHint.Antialiasing)
     QSvgRenderer(QByteArray(ICONA_APP_SVG.encode())).render(pittore, QRectF(immagine.rect()))
     pittore.end()
+    return immagine
+
+
+def pixmap_app(lato: int, scala: float = 2.0) -> QPixmap:
+    """L'icona dell'app come immagine nitida sugli schermi ad alta densità."""
+    immagine = _immagine_app(round(lato * scala))
+    immagine.setDevicePixelRatio(scala)
     return immagine
 
 

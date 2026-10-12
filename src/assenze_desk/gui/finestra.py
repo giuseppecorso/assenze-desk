@@ -103,10 +103,9 @@ class FinestraPrincipale(QMainWindow):
         layout.setContentsMargins(12, 16, 12, 16)
         layout.setSpacing(2)
 
-        logo = QLabel("AD")
-        logo.setObjectName("logo")
+        logo = QLabel()
+        logo.setPixmap(icone.pixmap_app(26))
         logo.setFixedSize(26, 26)
-        logo.setAlignment(Qt.AlignmentFlag.AlignCenter)
         marchio = QLabel("Assenze Desk")
         marchio.setObjectName("marchio")
         testata = QHBoxLayout()
