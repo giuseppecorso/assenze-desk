@@ -16,7 +16,7 @@ from pathlib import Path
 from PySide6.QtWidgets import QApplication, QMessageBox
 
 from assenze_desk.config import cartella_dati_predefinita
-from assenze_desk.gui import tema
+from assenze_desk.gui import icone, tema
 from assenze_desk.gui.finestra import FinestraPrincipale
 from assenze_desk.registro import chiudi_log
 from assenze_desk.servizi import apri_contesto
@@ -35,6 +35,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     scelte = argomenti(argv)
     app = QApplication.instance() or QApplication(sys.argv[:1])
     app.setApplicationName("Assenze Desk")
+    app.setWindowIcon(icone.icona_app())
     cartella_demo = Path(tempfile.mkdtemp(prefix="assenze-desk-demo-")) if scelte.demo else None
     cartella = cartella_demo or scelte.cartella_dati or cartella_dati_predefinita()
     try:

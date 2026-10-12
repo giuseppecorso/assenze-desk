@@ -4,7 +4,10 @@ Il colore viene dal tema attivo. Un pulsante con icona ha la property "icona"
 (e facoltativamente "icona_ruolo"): al cambio di tema `ricolora` la ridisegna.
 """
 
-from PySide6.QtCore import QByteArray, QRectF, QSize, Qt
+import struct
+from pathlib import Path
+
+from PySide6.QtCore import QBuffer, QByteArray, QIODevice, QRectF, QSize, Qt
 from PySide6.QtGui import QAction, QIcon, QPainter, QPixmap
 from PySide6.QtSvg import QSvgRenderer
 from PySide6.QtWidgets import QAbstractButton, QLabel, QLineEdit, QWidget
@@ -75,6 +78,55 @@ def pixmap(nome: str, colore: str, lato: int = LATO, scala: float = 2.0) -> QPix
     pittore.end()
     immagine.setDevicePixelRatio(scala)
     return immagine
+
+
+# Icona dell'app (finestra, eseguibile, collegamento): calendario con spunta su blu
+ICONA_APP_SVG = (
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">'
+    '<rect x="2" y="2" width="60" height="60" rx="14" fill="#2563eb"/>'
+    '<g fill="none" stroke="#ffffff" stroke-width="4.5" stroke-linecap="round" '
+    'stroke-linejoin="round">'
+    '<rect x="14" y="16" width="36" height="32" rx="5"/><path d="M14 26h36M23 11v9M41 11v9"/>'
+    '<path d="M24 37l5 5 11-10"/></g></svg>'
+)
+LATI_ICO = (16, 24, 32, 48, 64, 128, 256)
+
+
+def _immagine_app(lato: int) -> QPixmap:
+    immagine = QPixmap(QSize(lato, lato))
+    immagine.fill(Qt.GlobalColor.transparent)
+    pittore = QPainter(immagine)
+    pittore.setRenderHint(QPainter.RenderHint.Antialiasing)
+    QSvgRenderer(QByteArray(ICONA_APP_SVG.encode())).render(pittore, QRectF(immagine.rect()))
+    pittore.end()
+    return immagine
+
+
+def icona_app() -> QIcon:
+    icona_finestra = QIcon()
+    for lato in LATI_ICO:
+        icona_finestra.addPixmap(_immagine_app(lato))
+    return icona_finestra
+
+
+def scrivi_ico(percorso: Path) -> Path:
+    """File .ico con un PNG per ogni lato in LATI_ICO (per l'eseguibile e il collegamento)."""
+    immagini = []
+    for lato in LATI_ICO:
+        dati = QByteArray()
+        buffer = QBuffer(dati)
+        buffer.open(QIODevice.OpenModeFlag.WriteOnly)
+        _immagine_app(lato).save(buffer, "PNG")
+        immagini.append((lato, bytes(dati.data())))
+    intestazione = struct.pack("<HHH", 0, 1, len(immagini))
+    voci, posizione = b"", 6 + 16 * len(immagini)
+    for lato, png in immagini:
+        misura = lato if lato < 256 else 0  # 0 vuol dire 256
+        voci += struct.pack("<BBBBHHII", misura, misura, 0, 0, 1, 32, len(png), posizione)
+        posizione += len(png)
+    percorso = Path(percorso)
+    percorso.write_bytes(intestazione + voci + b"".join(png for _, png in immagini))
+    return percorso
 
 
 def icona(nome: str, ruolo: str = "testo", ruolo_attivo: str | None = None) -> QIcon:

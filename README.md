@@ -82,7 +82,10 @@ protocolli sono inventati.
 
 **Senza installare Python:** scarica lo zip per Windows dalla pagina
 [Releases](https://github.com/giuseppecorso/assenze-desk/releases), estrai la
-cartella e avvia `AssenzeDesk.exe --demo` dal prompt dei comandi.
+cartella e fai doppio clic su `Installa.cmd`: l'app si installa per il solo
+utente (senza permessi di amministratore) con l'icona sul Desktop e nel menu
+Start. Per la demo senza installare: `AssenzeDesk.exe --demo` dal prompt dei
+comandi nella cartella estratta.
 
 **Dal codice:** servono Windows e Python 3.14.
 

@@ -1,0 +1,13 @@
+Assenze Desk - installazione
+
+1. Estrai tutto lo zip (tasto destro sullo zip > Estrai tutto).
+2. Nella cartella estratta fai doppio clic su Installa.cmd.
+   Se Windows mostra "PC protetto da Windows": Ulteriori informazioni > Esegui comunque.
+3. Fatto: l'app si apre dall'icona "Assenze Desk" sul Desktop o dal menu Start.
+
+Per provarla con dati finti, senza toccare i tuoi: tasto destro sull'icona >
+Proprietà > in "Destinazione" aggiungi in fondo uno spazio e --demo.
+
+Aggiornare: estrai il nuovo zip e apri di nuovo Installa.cmd (i dati restano).
+Togliere: Disinstalla.cmd nella cartella %LOCALAPPDATA%\Programs\AssenzeDesk.
+I dati (archivio, impostazioni, certificati) stanno in %LOCALAPPDATA%\AssenzeDesk.

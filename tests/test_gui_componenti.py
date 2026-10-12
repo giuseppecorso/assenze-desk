@@ -57,6 +57,21 @@ def test_icone(app):
     assert not icone.pixmap("mail", "#000000").isNull()
 
 
+def test_icona_dell_app_e_file_ico(app, tmp_path):
+    assert not icone.icona_app().isNull()
+    file = icone.scrivi_ico(tmp_path / "app.ico")
+    dati = file.read_bytes()
+    assert dati[:4] == b"\x00\x00\x01\x00"  # intestazione ICO
+    numero = int.from_bytes(dati[4:6], "little")
+    assert numero == len(icone.LATI_ICO)
+    for indice in range(numero):
+        voce = dati[6 + 16 * indice : 6 + 16 * (indice + 1)]
+        dimensione = int.from_bytes(voce[8:12], "little")
+        inizio = int.from_bytes(voce[12:16], "little")
+        assert dati[inizio : inizio + 8] == b"\x89PNG\r\n\x1a\n"
+        assert inizio + dimensione <= len(dati)
+
+
 # --- Componenti ---
 
 

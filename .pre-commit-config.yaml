@@ -15,6 +15,7 @@ repos:
       - id: check-added-large-files
       - id: mixed-line-ending
         args: [--fix=lf]
+        exclude: \.(cmd|bat)$  # gli script di Windows restano CRLF (.gitattributes)
 
   # Stessa versione di ruff installata nel .venv (pyproject.toml)
   - repo: https://github.com/astral-sh/ruff-pre-commit
